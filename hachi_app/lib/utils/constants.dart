@@ -72,3 +72,18 @@ class AppCorners {
   static const double md = 20;
   static const double lg = 28;
 }
+
+class AppConstants {
+  AppConstants._();
+
+  static const String appName = 'Hachi Weather';
+
+  // WeatherAPI.com configuration
+  static const String apiKey = 'a4cdb439d6b745bfbf5110911251711';
+  static const String baseUrl = 'https://api.weatherapi.com/v1';
+
+  static const String defaultCity = 'Hanoi';
+
+  static const Duration cacheExpiration = Duration(minutes: 30);
+  static const Duration requestTimeout = Duration(seconds: 10);
+}

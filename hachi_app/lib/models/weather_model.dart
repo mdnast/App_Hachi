@@ -40,3 +40,29 @@ class WeatherInfo {
     );
   }
 }
+
+class DailyForecast {
+  const DailyForecast({
+    required this.date,
+    required this.low,
+    required this.high,
+    required this.weatherCode,
+  });
+
+  final DateTime date;
+  final double low;
+  final double high;
+  final int weatherCode;
+}
+
+class HourlyForecast {
+  const HourlyForecast({
+    required this.time,
+    required this.temperature,
+    required this.weatherCode,
+  });
+
+  final DateTime time;
+  final double temperature;
+  final int weatherCode;
+}

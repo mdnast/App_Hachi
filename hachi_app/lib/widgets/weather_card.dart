@@ -11,12 +11,14 @@ class WeatherCard extends StatelessWidget {
     required this.isLoading,
     required this.onRefresh,
     this.errorMessage,
+    this.locationLabel,
   });
 
   final WeatherInfo weather;
   final bool isLoading;
   final VoidCallback onRefresh;
   final String? errorMessage;
+  final String? locationLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +54,7 @@ class WeatherCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Weather', style: AppTextStyles.headingSmall),
+                    Text(locationLabel ?? 'Weather', style: AppTextStyles.headingSmall),
                     const SizedBox(height: 4),
                     Text(
                       weather.condition,

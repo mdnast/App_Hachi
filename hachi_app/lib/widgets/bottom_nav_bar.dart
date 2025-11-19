@@ -22,30 +22,34 @@ class BottomNavBar extends StatelessWidget {
       _BottomNavItem(Icons.shopping_bag_outlined, 'Market'),
     ];
 
-    return Container(
-      margin: const EdgeInsets.all(AppInsets.md),
-      padding: const EdgeInsets.symmetric(horizontal: AppInsets.md, vertical: AppInsets.sm),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppCorners.lg),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          for (var i = 0; i < items.length; i++)
-            _BottomNavButton(
-              item: items[i],
-              isActive: currentIndex == i,
-              onTap: () => onItemSelected(i),
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.only(bottom: AppInsets.xs),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(AppInsets.md, 0, AppInsets.md, AppInsets.sm),
+        padding: const EdgeInsets.symmetric(horizontal: AppInsets.md, vertical: AppInsets.xs),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(AppCorners.md),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(12),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-        ],
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            for (var i = 0; i < items.length; i++)
+              _BottomNavButton(
+                item: items[i],
+                isActive: currentIndex == i,
+                onTap: () => onItemSelected(i),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -76,7 +80,7 @@ class _BottomNavButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: AppInsets.sm, vertical: AppInsets.xs),
+        padding: const EdgeInsets.symmetric(horizontal: AppInsets.xs, vertical: 4),
         decoration: BoxDecoration(
           color: isActive ? AppColors.paleGreen : Colors.transparent,
           borderRadius: BorderRadius.circular(AppCorners.md),

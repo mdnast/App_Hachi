@@ -6,6 +6,7 @@ import '../../models/article_model.dart';
 import '../../models/plant_model.dart';
 import '../../models/weather_model.dart';
 import '../../services/article_service.dart';
+import '../../services/location_service.dart';
 import '../../services/weather_service.dart';
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
@@ -28,12 +29,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late DateTime _now;
   Timer? _clockTimer;
   final WeatherService _weatherService = WeatherService();
+  final LocationService _locationService = const LocationService();
   WeatherInfo _weather = WeatherInfo.placeholder();
   bool _isLoadingWeather = true;
   String? _weatherError;
   final ArticleService _articleService = ArticleService();
   late final List<PlantArticle> _articles;
   late final List<String> _categories;
+  String _locationLabel = 'Detecting location…';
 
   @override
   void initState() {
@@ -52,10 +55,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _startClock() {
-    _clockTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+    _clockTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
+      final now = DateTime.now();
       setState(() {
-        _now = DateTime.now();
+        _now = now;
       });
+
+      // Tự refresh thời tiết định kỳ khi đang ở màn hình Home, tránh phải ấn tay.
+      if (!_isLoadingWeather) {
+        final lastUpdated = _weather.lastUpdated;
+        if (now.difference(lastUpdated) > const Duration(minutes: 15)) {
+          // Không chờ kết quả trong timer; để _loadWeather tự quản lý state.
+          unawaited(_loadWeather());
+        }
+      }
     });
   }
 
@@ -65,15 +78,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _weatherError = null;
     });
     try {
-      final weather = await _weatherService.fetchCurrentWeather();
+      final position = await _locationService.getCurrentPosition();
+
+      // Thử reverse geocoding; nếu lỗi thì vẫn dùng thời tiết theo toạ độ nhưng label chung.
+      String locationLabel;
+      try {
+        locationLabel = await _locationService.getLocationLabelFrom(position);
+      } catch (_) {
+        locationLabel = 'Current location';
+      }
+
+      final weather = await _weatherService.fetchCurrentWeatherFor(
+        position.latitude,
+        position.longitude,
+      );
+
       setState(() {
         _weather = weather;
         _isLoadingWeather = false;
+        _locationLabel = locationLabel;
+        _weatherError = null;
       });
     } catch (error) {
       setState(() {
         _isLoadingWeather = false;
-        _weatherError = 'Unable to update weather. Tap refresh to retry.';
+        _weatherError = 'Không thể cập nhật thời tiết. Vui lòng bật GPS + internet rồi thử lại.';
       });
     }
   }
@@ -129,6 +158,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 weather: _weather,
                 isLoading: _isLoadingWeather,
                 onRefresh: _loadWeather,
+                locationLabel: _locationLabel,
                 errorMessage: _weatherError,
               ),
             ),

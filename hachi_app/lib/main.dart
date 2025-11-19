@@ -66,7 +66,7 @@ class _HomeShellState extends State<_HomeShell> {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.lightBackground,
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
