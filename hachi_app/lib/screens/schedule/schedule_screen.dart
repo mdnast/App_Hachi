@@ -46,6 +46,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
+  void _editActivity(ScheduleActivity oldActivity, ScheduleActivity updatedActivity) {
+    _removeActivity(oldActivity);
+    _insertActivity(updatedActivity);
+    _selectedDate = _dateKey(updatedActivity.startTime);
+    _focusedMonth = DateTime(_selectedDate.year, _selectedDate.month);
+  }
+
   void _updateActivityStatus(ScheduleActivity activity, ActivityStatus status) {
     final key = _dateKey(activity.startTime);
     final list = _schedules[key];
@@ -79,179 +86,42 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _showAddScheduleSheet() async {
-    final titleController = TextEditingController();
-    final locationController = TextEditingController();
-    DateTime chosenDate = _selectedDate;
-    TimeOfDay startTime = const TimeOfDay(hour: 8, minute: 0);
-    TimeOfDay endTime = const TimeOfDay(hour: 9, minute: 0);
-    bool saving = false;
-
-    await showModalBottomSheet<void>(
+    final result = await showModalBottomSheet<ScheduleActivity>(
       context: context,
       isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: AppInsets.lg,
-            right: AppInsets.lg,
-            top: AppInsets.lg,
-            bottom: MediaQuery.of(context).viewInsets.bottom + AppInsets.lg,
-          ),
-          child: StatefulBuilder(
-            builder: (context, setModalState) {
-              Future<void> pickDate() async {
-                final result = await showDatePicker(
-                  context: context,
-                  initialDate: chosenDate,
-                  firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                );
-                if (result != null) {
-                  setModalState(() => chosenDate = result);
-                }
-              }
-
-              Future<void> pickTime({required bool start}) async {
-                final initial = start ? startTime : endTime;
-                final result = await showTimePicker(
-                  context: context,
-                  initialTime: initial,
-                );
-                if (result != null) {
-                  setModalState(() {
-                    if (start) {
-                      startTime = result;
-                    } else {
-                      endTime = result;
-                    }
-                  });
-                }
-              }
-
-              Future<void> save() async {
-                if (titleController.text.trim().isEmpty || locationController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Title and location are required.')),
-                  );
-                  return;
-                }
-
-                final startDateTime = DateTime(
-                  chosenDate.year,
-                  chosenDate.month,
-                  chosenDate.day,
-                  startTime.hour,
-                  startTime.minute,
-                );
-                final endDateTime = DateTime(
-                  chosenDate.year,
-                  chosenDate.month,
-                  chosenDate.day,
-                  endTime.hour,
-                  endTime.minute,
-                );
-
-                if (!endDateTime.isAfter(startDateTime)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('End time must be after start time.')),
-                  );
-                  return;
-                }
-
-                setModalState(() => saving = true);
-
-                final activity = ScheduleActivity(
-                  title: titleController.text.trim(),
-                  location: locationController.text.trim(),
-                  startTime: startDateTime,
-                  endTime: endDateTime,
-                  status: ActivityStatus.incomplete,
-                );
-
-                setState(() {
-                  _insertActivity(activity);
-                  _selectedDate = _dateKey(chosenDate);
-                  _focusedMonth = DateTime(_selectedDate.year, _selectedDate.month);
-                });
-
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              }
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Add Schedule', style: AppTextStyles.headingMedium),
-                  const SizedBox(height: AppInsets.md),
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Title'),
-                    textCapitalization: TextCapitalization.sentences,
-                  ),
-                  const SizedBox(height: AppInsets.sm),
-                  TextField(
-                    controller: locationController,
-                    decoration: const InputDecoration(labelText: 'Location'),
-                    textCapitalization: TextCapitalization.sentences,
-                  ),
-                  const SizedBox(height: AppInsets.sm),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Date'),
-                    subtitle: Text(formatFullDate(chosenDate)),
-                    trailing: const Icon(Icons.calendar_today, color: AppColors.primaryGreen),
-                    onTap: pickDate,
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Start'),
-                          subtitle: Text(startTime.format(context)),
-                          trailing: const Icon(Icons.access_time, color: AppColors.primaryGreen),
-                          onTap: () => pickTime(start: true),
-                        ),
-                      ),
-                      const SizedBox(width: AppInsets.sm),
-                      Expanded(
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('End'),
-                          subtitle: Text(endTime.format(context)),
-                          trailing: const Icon(Icons.access_time, color: AppColors.primaryGreen),
-                          onTap: () => pickTime(start: false),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppInsets.lg),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: saving ? null : save,
-                      icon: saving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.save),
-                      label: Text(saving ? 'Saving...' : 'Save Schedule'),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
+      builder: (context) => _ScheduleFormSheet(
+        sheetTitle: 'Add Schedule',
+        submitLabel: 'Save Schedule',
+        initialDate: _selectedDate,
+      ),
     );
 
-    titleController.dispose();
-    locationController.dispose();
+    if (!mounted || result == null) return;
+
+    setState(() {
+      _insertActivity(result);
+      _selectedDate = _dateKey(result.startTime);
+      _focusedMonth = DateTime(_selectedDate.year, _selectedDate.month);
+    });
+  }
+
+  Future<void> _showEditScheduleSheet(ScheduleActivity activity) async {
+    final result = await showModalBottomSheet<ScheduleActivity>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _ScheduleFormSheet(
+        sheetTitle: 'Edit Schedule',
+        submitLabel: 'Update Schedule',
+        initialDate: activity.startTime,
+        initialActivity: activity,
+      ),
+    );
+
+    if (!mounted || result == null) return;
+
+    setState(() {
+      _editActivity(activity, result);
+    });
   }
 
   @override
@@ -444,6 +314,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               onDelete: () {
                                 setState(() => _removeActivity(activity));
                               },
+                              onEdit: () => _showEditScheduleSheet(activity),
                             ),
                           );
                         },
@@ -462,11 +333,13 @@ class _ScheduleCard extends StatelessWidget {
     required this.activity,
     required this.onStatusToggle,
     required this.onDelete,
+    required this.onEdit,
   });
 
   final ScheduleActivity activity;
   final VoidCallback onStatusToggle;
   final VoidCallback onDelete;
+   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -514,9 +387,18 @@ class _ScheduleCard extends StatelessWidget {
                     ),
                     child: Text(statusLabel, style: AppTextStyles.bodySmall.copyWith(color: statusColor)),
                   ),
-                  IconButton(
-                    onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline, color: AppColors.mutedText),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: onEdit,
+                        icon: const Icon(Icons.edit_outlined, color: AppColors.mutedText),
+                      ),
+                      IconButton(
+                        onPressed: onDelete,
+                        icon: const Icon(Icons.delete_outline, color: AppColors.mutedText),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -568,5 +450,210 @@ class _ScheduleCard extends StatelessWidget {
       case ActivityStatus.incomplete:
         return 'Incomplete';
     }
+  }
+}
+
+class _ScheduleFormSheet extends StatefulWidget {
+  const _ScheduleFormSheet({
+    required this.sheetTitle,
+    required this.submitLabel,
+    required this.initialDate,
+    this.initialActivity,
+  });
+
+  final String sheetTitle;
+  final String submitLabel;
+  final DateTime initialDate;
+  final ScheduleActivity? initialActivity;
+
+  @override
+  State<_ScheduleFormSheet> createState() => _ScheduleFormSheetState();
+}
+
+class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _locationController;
+  late DateTime _chosenDate;
+  late TimeOfDay _startTime;
+  late TimeOfDay _endTime;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialActivity;
+    _titleController = TextEditingController(text: initial?.title ?? '');
+    _locationController = TextEditingController(text: initial?.location ?? '');
+    _chosenDate = initial?.startTime ?? widget.initialDate;
+    _startTime = TimeOfDay(
+      hour: initial?.startTime.hour ?? 8,
+      minute: initial?.startTime.minute ?? 0,
+    );
+    _endTime = TimeOfDay(
+      hour: initial?.endTime.hour ?? 9,
+      minute: initial?.endTime.minute ?? 0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final result = await showDatePicker(
+      context: context,
+      initialDate: _chosenDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (result != null) {
+      setState(() => _chosenDate = result);
+    }
+  }
+
+  Future<void> _pickTime({required bool start}) async {
+    final initial = start ? _startTime : _endTime;
+    final result = await showTimePicker(
+      context: context,
+      initialTime: initial,
+    );
+    if (result != null) {
+      setState(() {
+        if (start) {
+          _startTime = result;
+        } else {
+          _endTime = result;
+        }
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    final title = _titleController.text.trim();
+    final location = _locationController.text.trim();
+    if (title.isEmpty || location.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Title and location are required.')),
+      );
+      return;
+    }
+
+    final startDateTime = DateTime(
+      _chosenDate.year,
+      _chosenDate.month,
+      _chosenDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+    final endDateTime = DateTime(
+      _chosenDate.year,
+      _chosenDate.month,
+      _chosenDate.day,
+      _endTime.hour,
+      _endTime.minute,
+    );
+
+    if (!endDateTime.isAfter(startDateTime)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End time must be after start time.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    final base = widget.initialActivity;
+    final activity = ScheduleActivity(
+      title: title,
+      location: location,
+      startTime: startDateTime,
+      endTime: endDateTime,
+      status: base?.status ?? ActivityStatus.incomplete,
+    );
+
+    if (!mounted) return;
+    Navigator.of(context).pop(activity);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppInsets.lg,
+        right: AppInsets.lg,
+        top: AppInsets.lg,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppInsets.lg,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.sheetTitle, style: AppTextStyles.headingMedium),
+            const SizedBox(height: AppInsets.md),
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'Title'),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppInsets.sm),
+            TextField(
+              controller: _locationController,
+              decoration: const InputDecoration(labelText: 'Location'),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppInsets.sm),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Date'),
+              subtitle: Text(formatFullDate(_chosenDate)),
+              trailing: const Icon(Icons.calendar_today, color: AppColors.primaryGreen),
+              onTap: _pickDate,
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Start'),
+                    subtitle: Text(_startTime.format(context)),
+                    trailing: const Icon(Icons.access_time, color: AppColors.primaryGreen),
+                    onTap: () => _pickTime(start: true),
+                  ),
+                ),
+                const SizedBox(width: AppInsets.sm),
+                Expanded(
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('End'),
+                    subtitle: Text(_endTime.format(context)),
+                    trailing: const Icon(Icons.access_time, color: AppColors.primaryGreen),
+                    onTap: () => _pickTime(start: false),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppInsets.lg),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _saving ? null : _submit,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save),
+                label: Text(_saving ? 'Saving...' : widget.submitLabel),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
