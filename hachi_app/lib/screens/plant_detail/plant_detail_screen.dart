@@ -371,44 +371,47 @@ class _WeatherSection extends StatelessWidget {
     final isNight = hour >= 21 || hour < 6;
 
     return SizedBox(
-      height: 220,
+      height: 240, // Reduced height to move chart up closer to title
       child: Stack(
         children: [
           // The curve painter
           Positioned.fill(child: CustomPaint(painter: _WeatherCurvePainter())),
           // Weather Items
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _WeatherItem(
-                label: 'Morning',
-                temp: '$low°',
-                icon: Icons.cloud_outlined,
-                isSelected: isMorning,
-              ),
-              _WeatherItem(
-                label: 'Afternoon',
-                temp: '$high°',
-                icon: Icons.cloud_queue,
-                isSelected: isAfternoon,
-                offsetY: -40,
-              ),
-              _WeatherItem(
-                label: 'Evening',
-                temp: '$temp°',
-                icon: Icons.wb_sunny_outlined,
-                isSelected: isEvening,
-                offsetY: -20,
-              ),
-              _WeatherItem(
-                label: 'Night',
-                temp: '$night°',
-                icon: Icons.thunderstorm_outlined,
-                isSelected: isNight,
-                offsetY: 10,
-              ),
-            ],
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _WeatherItem(
+                  label: 'Morning',
+                  temp: '$low°',
+                  icon: Icons.cloud_outlined,
+                  isSelected: isMorning,
+                ),
+                _WeatherItem(
+                  label: 'Afternoon',
+                  temp: '$high°',
+                  icon: Icons.cloud_queue,
+                  isSelected: isAfternoon,
+                  offsetY: -50, // Adjusted offset
+                ),
+                _WeatherItem(
+                  label: 'Evening',
+                  temp: '$temp°',
+                  icon: Icons.wb_sunny_outlined,
+                  isSelected: isEvening,
+                  offsetY: -20,
+                ),
+                _WeatherItem(
+                  label: 'Night',
+                  temp: '$night°',
+                  icon: Icons.thunderstorm_outlined,
+                  isSelected: isNight,
+                  offsetY: 10,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -521,27 +524,27 @@ class _WeatherCurvePainter extends CustomPainter {
     // Evening: x ~ 62%, y ~ 60%
     // Night: x ~ 87%, y ~ 75%
 
-    final p1 = Offset(w * 0.12, h * 0.75);
-    final p2 = Offset(w * 0.37, h * 0.55);
-    final p3 = Offset(w * 0.62, h * 0.65);
-    final p4 = Offset(w * 0.87, h * 0.78);
+    final p1 = Offset(w * 0.12, h * 0.78);
+    final p2 = Offset(w * 0.37, h * 0.60);
+    final p3 = Offset(w * 0.62, h * 0.70);
+    final p4 = Offset(w * 0.87, h * 0.82);
 
-    path.moveTo(0, h * 0.8); // Start left
+    path.moveTo(0, h * 0.82); // Start left
 
     // Curve to p1
-    path.quadraticBezierTo(w * 0.06, h * 0.8, p1.dx, p1.dy);
+    path.quadraticBezierTo(w * 0.06, h * 0.82, p1.dx, p1.dy);
 
     // Curve p1 to p2
-    path.cubicTo(w * 0.2, h * 0.7, w * 0.28, h * 0.55, p2.dx, p2.dy);
+    path.cubicTo(w * 0.2, h * 0.75, w * 0.28, h * 0.60, p2.dx, p2.dy);
 
     // Curve p2 to p3
-    path.cubicTo(w * 0.45, h * 0.55, w * 0.5, h * 0.6, p3.dx, p3.dy);
+    path.cubicTo(w * 0.45, h * 0.60, w * 0.5, h * 0.65, p3.dx, p3.dy);
 
     // Curve p3 to p4
-    path.cubicTo(w * 0.7, h * 0.7, w * 0.8, h * 0.78, p4.dx, p4.dy);
+    path.cubicTo(w * 0.7, h * 0.75, w * 0.8, h * 0.82, p4.dx, p4.dy);
 
     // End right
-    path.quadraticBezierTo(w * 0.95, h * 0.78, w, h * 0.8);
+    path.quadraticBezierTo(w * 0.95, h * 0.82, w, h * 0.85);
 
     canvas.drawPath(path, paint);
 

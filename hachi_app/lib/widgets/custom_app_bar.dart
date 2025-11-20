@@ -21,7 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onNotificationTap;
 
   @override
-  Size get preferredSize => const Size.fromHeight(180);
+  Size get preferredSize => const Size.fromHeight(220);
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +66,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 IconButton(
                   onPressed: onNotificationTap,
-                  icon: const Icon(Icons.notifications_none, color: Colors.white),
+                  icon: const Icon(
+                    Icons.notifications_none,
+                    color: Colors.white,
+                  ),
                 ),
               ],
             ),

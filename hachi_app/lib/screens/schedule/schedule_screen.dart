@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/activity_model.dart';
 import '../../utils/constants.dart';
@@ -12,18 +13,59 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  late DateTime _focusedMonth;
   late DateTime _selectedDate;
   final Map<DateTime, List<ScheduleActivity>> _schedules = {};
+  late final ScrollController _dateScrollController;
+
+  // Infinite scroll configuration
+  final int _initialIndex = 5000;
+  final double _itemWidth = 70.0; // 60 width + 10 margin
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day);
-    _focusedMonth = DateTime(_selectedDate.year, _selectedDate.month);
+
+    // Initialize with a rough estimate
+    _dateScrollController = ScrollController(
+      initialScrollOffset: _initialIndex * _itemWidth,
+    );
+
     for (final activity in sampleSchedule) {
       _insertActivity(activity);
+    }
+
+    // Center the date after the first frame when we have screen dimensions
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_dateScrollController.hasClients) {
+        _scrollToIndex(_initialIndex, animate: false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _dateScrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToIndex(int index, {bool animate = true}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Calculate offset to center the item
+    // Item center = index * width + width/2
+    // Screen center = screenWidth / 2
+    // Offset = Item center - Screen center
+    final offset = (index * _itemWidth) + (_itemWidth / 2) - (screenWidth / 2);
+
+    if (animate) {
+      _dateScrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    } else {
+      _dateScrollController.jumpTo(offset);
     }
   }
 
@@ -46,11 +88,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  void _editActivity(ScheduleActivity oldActivity, ScheduleActivity updatedActivity) {
+  void _editActivity(
+    ScheduleActivity oldActivity,
+    ScheduleActivity updatedActivity,
+  ) {
     _removeActivity(oldActivity);
     _insertActivity(updatedActivity);
-    _selectedDate = _dateKey(updatedActivity.startTime);
-    _focusedMonth = DateTime(_selectedDate.year, _selectedDate.month);
+    setState(() {
+      _selectedDate = _dateKey(updatedActivity.startTime);
+    });
+    // We need to find the index of this new date to scroll to it
+    // But since our list is infinite based on _initialIndex (today), we can calculate it.
+    final diff = _dateKey(
+      updatedActivity.startTime,
+    ).difference(_dateKey(DateTime.now())).inDays;
+    _scrollToIndex(_initialIndex + diff);
   }
 
   void _updateActivityStatus(ScheduleActivity activity, ActivityStatus status) {
@@ -63,32 +115,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     setState(() {});
   }
 
-  List<DateTime> get _daysInFocusedMonth {
-    final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
-    return List.generate(
-      daysInMonth,
-      (index) => DateTime(_focusedMonth.year, _focusedMonth.month, index + 1),
-    );
-  }
-
   List<ScheduleActivity> get _selectedDaySchedules {
     final key = _dateKey(_selectedDate);
     return List.unmodifiable(_schedules[key] ?? []);
-  }
-
-  void _changeMonth(int delta) {
-    setState(() {
-      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + delta);
-      final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
-      final day = _selectedDate.day.clamp(1, daysInMonth);
-      _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, day);
-    });
   }
 
   Future<void> _showAddScheduleSheet() async {
     final result = await showModalBottomSheet<ScheduleActivity>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => _ScheduleFormSheet(
         sheetTitle: 'Add Schedule',
         submitLabel: 'Save Schedule',
@@ -101,14 +137,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     setState(() {
       _insertActivity(result);
       _selectedDate = _dateKey(result.startTime);
-      _focusedMonth = DateTime(_selectedDate.year, _selectedDate.month);
     });
+
+    final diff = _dateKey(
+      result.startTime,
+    ).difference(_dateKey(DateTime.now())).inDays;
+    _scrollToIndex(_initialIndex + diff);
   }
 
   Future<void> _showEditScheduleSheet(ScheduleActivity activity) async {
     final result = await showModalBottomSheet<ScheduleActivity>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => _ScheduleFormSheet(
         sheetTitle: 'Edit Schedule',
         submitLabel: 'Update Schedule',
@@ -126,202 +167,280 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final days = _daysInFocusedMonth;
     final selectedSchedules = _selectedDaySchedules;
+    final now = DateTime.now();
+    final todayKey = _dateKey(now);
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddScheduleSheet,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Task'),
+        backgroundColor: AppColors.primaryGreen,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Add Task', style: TextStyle(color: Colors.white)),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppInsets.lg, vertical: AppInsets.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(AppInsets.lg),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Daily Schedule', style: AppTextStyles.headingLarge),
+                      const Text(
+                        'Daily Schedule',
+                        style: AppTextStyles.headingLarge,
+                      ),
                       const SizedBox(height: 4),
-                      Text(formatFullDate(_selectedDate), style: AppTextStyles.bodySmall),
+                      Text(
+                        DateFormat('MMMM yyyy').format(_selectedDate),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                     ],
                   ),
-                  const Spacer(),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(AppCorners.md),
-                      boxShadow: const [
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
                         BoxShadow(
-                          color: Color(0x1F000000),
-                          blurRadius: 12,
-                          offset: Offset(0, 6),
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.calendar_month, color: AppColors.darkText),
+                    child: const Icon(
+                      Icons.calendar_today_rounded,
+                      color: AppColors.primaryGreen,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppInsets.lg),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppInsets.md, vertical: AppInsets.sm),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppCorners.lg),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x1F000000),
-                      blurRadius: 12,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => _changeMonth(-1),
-                      icon: const Icon(Icons.chevron_left, color: AppColors.mutedText),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          formatMonthYear(_focusedMonth),
-                          style: AppTextStyles.bodyMedium,
-                        ),
+            ),
+
+            // Date Strip (Infinite Scroll)
+            SizedBox(
+              height: 90,
+              child: ListView.builder(
+                controller: _dateScrollController,
+                scrollDirection: Axis.horizontal,
+                itemCount: 10000, // Large enough to feel infinite
+                itemBuilder: (context, index) {
+                  final dayOffset = index - _initialIndex;
+                  final date = now.add(Duration(days: dayOffset));
+                  final isSelected = _dateKey(date) == _dateKey(_selectedDate);
+                  final isToday = _dateKey(date) == todayKey;
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() => _selectedDate = _dateKey(date));
+                      _scrollToIndex(index);
+                    },
+                    child: Container(
+                      width: 60,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 5,
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () => _changeMonth(1),
-                      icon: const Icon(Icons.chevron_right, color: AppColors.mutedText),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppInsets.lg),
-              SizedBox(
-                height: 88,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: days.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: AppInsets.sm),
-                  itemBuilder: (_, index) {
-                    final date = days[index];
-                    final isSelected = _dateKey(date) == _dateKey(_selectedDate);
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedDate = _dateKey(date)),
-                      child: Container(
-                        width: 64,
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primaryGreen : Colors.white,
-                          borderRadius: BorderRadius.circular(AppCorners.md),
-                          boxShadow: const [
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primaryGreen
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          if (isSelected)
                             BoxShadow(
-                              color: Color(0x1F000000),
+                              color: AppColors.primaryGreen.withOpacity(0.4),
                               blurRadius: 10,
-                              offset: Offset(0, 6),
+                              offset: const Offset(0, 4),
+                            )
+                          else
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: AppInsets.sm),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              formatWeekdayShort(date),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isSelected ? Colors.white70 : AppColors.mutedText,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : AppColors.lightBackground,
-                                borderRadius: BorderRadius.circular(AppCorners.sm),
-                              ),
-                              child: Text(
-                                '${date.day}',
-                                style: AppTextStyles.headingSmall.copyWith(
-                                  color: isSelected ? AppColors.primaryGreen : AppColors.darkText,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
+                        border: isToday && !isSelected
+                            ? Border.all(
+                                color: AppColors.primaryGreen,
+                                width: 1.5,
+                              )
+                            : null,
                       ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: AppInsets.lg),
-              Expanded(
-                child: selectedSchedules.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No schedules yet for ${formatFullDate(_selectedDate)}. Tap "Add Task" to create one.',
-                          style: AppTextStyles.bodySmall,
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: selectedSchedules.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: AppInsets.md),
-                        itemBuilder: (_, index) {
-                          final activity = selectedSchedules[index];
-                          return Dismissible(
-                            key: ValueKey('${activity.title}-${activity.startTime.millisecondsSinceEpoch}'),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.symmetric(horizontal: AppInsets.lg),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent.withAlpha(180),
-                                borderRadius: BorderRadius.circular(AppCorners.lg),
-                              ),
-                              child: const Icon(Icons.delete, color: Colors.white),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            DateFormat('E').format(date), // Mon, Tue
+                            style: AppTextStyles.caption.copyWith(
+                              color: isSelected
+                                  ? Colors.white70
+                                  : AppColors.mutedText,
+                              fontWeight: FontWeight.w500,
                             ),
-                            confirmDismiss: (_) async {
-                              return await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Delete schedule?'),
-                                      content: const Text('This task will be removed permanently.'),
-                                      actions: [
-                                        TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-                                        TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
-                                      ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${date.day}',
+                            style: AppTextStyles.headingSmall.copyWith(
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.darkText,
+                              fontSize: 18,
+                            ),
+                          ),
+                          if (isToday && !isSelected) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              width: 4,
+                              height: 4,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primaryGreen,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: AppInsets.md),
+
+            // Schedule List
+            Expanded(
+              child: selectedSchedules.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.event_busy_rounded,
+                            size: 64,
+                            color: Colors.grey[300],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No tasks for ${DateFormat('MMM d').format(_selectedDate)}',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.mutedText,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: _showAddScheduleSheet,
+                            child: const Text(
+                              'Create a new task',
+                              style: TextStyle(
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(AppInsets.lg),
+                      itemCount: selectedSchedules.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppInsets.md),
+                      itemBuilder: (_, index) {
+                        final activity = selectedSchedules[index];
+                        return Dismissible(
+                          key: ValueKey(
+                            '${activity.title}-${activity.startTime.millisecondsSinceEpoch}',
+                          ),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppInsets.lg,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(
+                                AppCorners.lg,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                          confirmDismiss: (_) async {
+                            return await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Delete Task'),
+                                    content: const Text(
+                                      'Are you sure you want to delete this task?',
                                     ),
-                                  ) ??
-                                  false;
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: const Text(
+                                          'Cancel',
+                                          style: TextStyle(
+                                            color: AppColors.mutedText,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: const Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                            color: Colors.redAccent,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ) ??
+                                false;
+                          },
+                          onDismissed: (_) {
+                            setState(() => _removeActivity(activity));
+                          },
+                          child: _ScheduleCard(
+                            activity: activity,
+                            onStatusToggle: () {
+                              final isCompleted =
+                                  activity.status == ActivityStatus.completed;
+                              _updateActivityStatus(
+                                activity,
+                                isCompleted
+                                    ? ActivityStatus.incomplete
+                                    : ActivityStatus.completed,
+                              );
                             },
-                            onDismissed: (_) {
+                            onDelete: () {
                               setState(() => _removeActivity(activity));
                             },
-                            child: _ScheduleCard(
-                              activity: activity,
-                              onStatusToggle: () {
-                                final isCompleted = activity.status == ActivityStatus.completed;
-                                _updateActivityStatus(activity, isCompleted ? ActivityStatus.incomplete : ActivityStatus.completed);
-                              },
-                              onDelete: () {
-                                setState(() => _removeActivity(activity));
-                              },
-                              onEdit: () => _showEditScheduleSheet(activity),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
+                            onEdit: () => _showEditScheduleSheet(activity),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );
@@ -339,90 +458,177 @@ class _ScheduleCard extends StatelessWidget {
   final ScheduleActivity activity;
   final VoidCallback onStatusToggle;
   final VoidCallback onDelete;
-   final VoidCallback onEdit;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
-    final statusLabel = _statusLabel(activity.status);
-    final statusColor = _statusColor(activity.status);
     final isCompleted = activity.status == ActivityStatus.completed;
+    final statusColor = _statusColor(activity.status);
 
     return Container(
-      padding: const EdgeInsets.all(AppInsets.lg),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AppCorners.lg),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x1F000000),
-            blurRadius: 12,
-            offset: Offset(0, 6),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Time Column
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(activity.title, style: AppTextStyles.headingSmall),
-                    const SizedBox(height: 6),
-                    Text(activity.location, style: AppTextStyles.bodySmall),
+                    Text(
+                      DateFormat('HH:mm').format(activity.startTime),
+                      style: AppTextStyles.headingSmall.copyWith(fontSize: 16),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat('HH:mm').format(activity.endTime),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppInsets.sm, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: statusColor.withAlpha(26),
-                      borderRadius: BorderRadius.circular(AppCorners.sm),
-                    ),
-                    child: Text(statusLabel, style: AppTextStyles.bodySmall.copyWith(color: statusColor)),
+                const SizedBox(width: 16),
+
+                // Vertical Divider
+                Container(
+                  width: 4,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                ),
+                const SizedBox(width: 16),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        onPressed: onEdit,
-                        icon: const Icon(Icons.edit_outlined, color: AppColors.mutedText),
+                      Text(
+                        activity.title,
+                        style: AppTextStyles.headingSmall.copyWith(
+                          decoration: isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: isCompleted
+                              ? AppColors.mutedText
+                              : AppColors.darkText,
+                        ),
                       ),
-                      IconButton(
-                        onPressed: onDelete,
-                        icon: const Icon(Icons.delete_outline, color: AppColors.mutedText),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: AppColors.mutedText,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              activity.location,
+                              style: AppTextStyles.caption,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                ),
+
+                // Actions
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: AppColors.mutedText),
+                  onSelected: (value) {
+                    if (value == 'edit') onEdit();
+                    if (value == 'delete') onDelete();
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 18, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Bottom Action Strip
+          InkWell(
+            onTap: onStatusToggle,
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: isCompleted
+                    ? AppColors.primaryGreen.withOpacity(0.1)
+                    : Colors.grey[50],
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isCompleted
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    size: 18,
+                    color: isCompleted
+                        ? AppColors.primaryGreen
+                        : AppColors.mutedText,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isCompleted ? 'Completed' : 'Mark as Done',
+                    style: TextStyle(
+                      color: isCompleted
+                          ? AppColors.primaryGreen
+                          : AppColors.mutedText,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: AppInsets.md),
-          Row(
-            children: [
-              const Icon(Icons.access_time, size: 18, color: AppColors.mutedText),
-              const SizedBox(width: 8),
-              Text(formatTime(activity.startTime), style: AppTextStyles.bodySmall),
-              const SizedBox(width: 4),
-              Text('-', style: AppTextStyles.bodySmall),
-              const SizedBox(width: 4),
-              Text(formatTime(activity.endTime), style: AppTextStyles.bodySmall),
-            ],
-          ),
-          const SizedBox(height: AppInsets.md),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton.icon(
-              onPressed: onStatusToggle,
-              icon: Icon(isCompleted ? Icons.refresh : Icons.check_circle, color: AppColors.primaryGreen),
-              label: Text(isCompleted ? 'Mark as Incomplete' : 'Mark as Completed'),
             ),
           ),
         ],
@@ -437,18 +643,7 @@ class _ScheduleCard extends StatelessWidget {
       case ActivityStatus.inProgress:
         return AppColors.accentOrange;
       case ActivityStatus.incomplete:
-        return Colors.redAccent;
-    }
-  }
-
-  String _statusLabel(ActivityStatus status) {
-    switch (status) {
-      case ActivityStatus.completed:
-        return 'Completed';
-      case ActivityStatus.inProgress:
-        return 'In Progress';
-      case ActivityStatus.incomplete:
-        return 'Incomplete';
+        return AppColors.primaryGreen; // Default to green for consistency
     }
   }
 }
@@ -508,6 +703,18 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
       initialDate: _chosenDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryGreen,
+              onPrimary: Colors.white,
+              onSurface: AppColors.darkText,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (result != null) {
       setState(() => _chosenDate = result);
@@ -519,6 +726,18 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
     final result = await showTimePicker(
       context: context,
       initialTime: initial,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryGreen,
+              onPrimary: Colors.white,
+              onSurface: AppColors.darkText,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (result != null) {
       setState(() {
@@ -565,6 +784,9 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
 
     setState(() => _saving = true);
 
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
+
     final base = widget.initialActivity;
     final activity = ScheduleActivity(
       title: title,
@@ -580,11 +802,15 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
       padding: EdgeInsets.only(
         left: AppInsets.lg,
         right: AppInsets.lg,
-        top: AppInsets.lg,
+        top: AppInsets.xl,
         bottom: MediaQuery.of(context).viewInsets.bottom + AppInsets.lg,
       ),
       child: SingleChildScrollView(
@@ -592,67 +818,174 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.sheetTitle, style: AppTextStyles.headingMedium),
-            const SizedBox(height: AppInsets.md),
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Title'),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: AppInsets.sm),
-            TextField(
-              controller: _locationController,
-              decoration: const InputDecoration(labelText: 'Location'),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: AppInsets.sm),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Date'),
-              subtitle: Text(formatFullDate(_chosenDate)),
-              trailing: const Icon(Icons.calendar_today, color: AppColors.primaryGreen),
-              onTap: _pickDate,
-            ),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Start'),
-                    subtitle: Text(_startTime.format(context)),
-                    trailing: const Icon(Icons.access_time, color: AppColors.primaryGreen),
-                    onTap: () => _pickTime(start: true),
-                  ),
-                ),
-                const SizedBox(width: AppInsets.sm),
-                Expanded(
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('End'),
-                    subtitle: Text(_endTime.format(context)),
-                    trailing: const Icon(Icons.access_time, color: AppColors.primaryGreen),
-                    onTap: () => _pickTime(start: false),
-                  ),
+                Text(widget.sheetTitle, style: AppTextStyles.headingMedium),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: AppColors.mutedText),
                 ),
               ],
             ),
             const SizedBox(height: AppInsets.lg),
+
+            _buildTextField(
+              controller: _titleController,
+              label: 'Task Title',
+              icon: Icons.task_alt,
+            ),
+            const SizedBox(height: AppInsets.md),
+
+            _buildTextField(
+              controller: _locationController,
+              label: 'Location',
+              icon: Icons.location_on_outlined,
+            ),
+            const SizedBox(height: AppInsets.lg),
+
+            const Text('Date & Time', style: AppTextStyles.headingSmall),
+            const SizedBox(height: AppInsets.md),
+
+            Container(
+              padding: const EdgeInsets.all(AppInsets.md),
+              decoration: BoxDecoration(
+                color: AppColors.lightBackground,
+                borderRadius: BorderRadius.circular(AppCorners.md),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                children: [
+                  _buildDateTimeRow(
+                    label: 'Date',
+                    value: DateFormat('EEE, MMM d, yyyy').format(_chosenDate),
+                    icon: Icons.calendar_today,
+                    onTap: _pickDate,
+                  ),
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDateTimeRow(
+                          label: 'Start',
+                          value: _startTime.format(context),
+                          icon: Icons.access_time,
+                          onTap: () => _pickTime(start: true),
+                        ),
+                      ),
+                      Container(
+                        height: 30,
+                        width: 1,
+                        color: Colors.grey[300],
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      Expanded(
+                        child: _buildDateTimeRow(
+                          label: 'End',
+                          value: _endTime.format(context),
+                          icon: Icons.access_time_filled,
+                          onTap: () => _pickTime(start: false),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppInsets.xl),
+
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              height: 50,
+              child: ElevatedButton(
                 onPressed: _saving ? null : _submit,
-                icon: _saving
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _saving
                     ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
-                    : const Icon(Icons.save),
-                label: Text(_saving ? 'Saving...' : widget.submitLabel),
+                    : Text(
+                        widget.submitLabel,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+  }) {
+    return TextField(
+      controller: controller,
+      textCapitalization: TextCapitalization.sentences,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: AppColors.mutedText),
+        filled: true,
+        fillColor: AppColors.lightBackground,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryGreen),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+    );
+  }
+
+  Widget _buildDateTimeRow({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.primaryGreen),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTextStyles.caption),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkText,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
