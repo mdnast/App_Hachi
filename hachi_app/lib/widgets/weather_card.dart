@@ -12,6 +12,7 @@ class WeatherCard extends StatelessWidget {
     required this.onRefresh,
     this.errorMessage,
     this.locationLabel,
+    this.currentTime,
   });
 
   final WeatherInfo weather;
@@ -19,17 +20,23 @@ class WeatherCard extends StatelessWidget {
   final VoidCallback onRefresh;
   final String? errorMessage;
   final String? locationLabel;
+  final DateTime? currentTime;
 
   @override
   Widget build(BuildContext context) {
-    final hasMeasurements = weather.temperature != 0 || weather.low != 0 || weather.high != 0;
-    final tempLabel = hasMeasurements ? '${weather.temperature.round()}°C' : '--°C';
+    final hasMeasurements =
+        weather.temperature != 0 || weather.low != 0 || weather.high != 0;
+    final tempLabel = hasMeasurements
+        ? '${weather.temperature.round()}°C'
+        : '--°C';
     final rangeLabel = hasMeasurements
         ? 'Low ${weather.low.round()}°C  ·  High ${weather.high.round()}°C'
         : 'Low --°C  ·  High --°C';
-    final updatedLabel = hasMeasurements
-        ? 'Updated ${formatTime(weather.lastUpdated)}'
-        : 'Awaiting latest update';
+    final updatedLabel = currentTime != null
+        ? 'Local Time: ${formatTime(currentTime!)}'
+        : (hasMeasurements
+              ? 'Updated ${formatTime(weather.lastUpdated)}'
+              : 'Awaiting latest update');
 
     return Container(
       padding: const EdgeInsets.all(AppInsets.lg),
@@ -54,12 +61,12 @@ class WeatherCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(locationLabel ?? 'Weather', style: AppTextStyles.headingSmall),
-                    const SizedBox(height: 4),
                     Text(
-                      weather.condition,
-                      style: AppTextStyles.bodySmall,
+                      locationLabel ?? 'Weather',
+                      style: AppTextStyles.headingSmall,
                     ),
+                    const SizedBox(height: 4),
+                    Text(weather.condition, style: AppTextStyles.bodySmall),
                   ],
                 ),
               ),
@@ -69,7 +76,10 @@ class WeatherCard extends StatelessWidget {
                   color: AppColors.paleGreen,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.wb_sunny, color: AppColors.primaryGreen),
+                child: const Icon(
+                  Icons.wb_sunny,
+                  color: AppColors.primaryGreen,
+                ),
               ),
             ],
           ),
@@ -79,15 +89,9 @@ class WeatherCard extends StatelessWidget {
             style: AppTextStyles.headingLarge.copyWith(fontSize: 40),
           ),
           const SizedBox(height: 8),
-          Text(
-            rangeLabel,
-            style: AppTextStyles.bodySmall,
-          ),
+          Text(rangeLabel, style: AppTextStyles.bodySmall),
           const SizedBox(height: AppInsets.sm),
-          Text(
-            updatedLabel,
-            style: AppTextStyles.caption,
-          ),
+          Text(updatedLabel, style: AppTextStyles.caption),
           if (errorMessage != null) ...[
             const SizedBox(height: AppInsets.sm),
             Text(
@@ -114,7 +118,9 @@ class WeatherCard extends StatelessWidget {
                   : const Icon(Icons.refresh, size: 16),
               label: Text(
                 isLoading ? 'Updating…' : 'Refresh',
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryGreen),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primaryGreen,
+                ),
               ),
             ),
           ),

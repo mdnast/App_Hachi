@@ -1,141 +1,208 @@
 import 'package:flutter/material.dart';
 
 import '../../models/plant_model.dart';
+import '../../models/weather_model.dart';
 import '../../utils/constants.dart';
 
 class PlantDetailScreen extends StatelessWidget {
-  const PlantDetailScreen({super.key, required this.detail});
+  const PlantDetailScreen({
+    super.key,
+    required this.detail,
+    this.weather,
+    this.locationLabel,
+  });
 
   final PlantDetail detail;
+  final WeatherInfo? weather;
+  final String? locationLabel;
 
   @override
   Widget build(BuildContext context) {
+    // Check if weather is placeholder (e.g. humidity is 0 and condition is Updating...)
+    final isPlaceholder =
+        weather == null ||
+        (weather!.humidity == 0 && weather!.condition == 'Updating…');
+
+    // Use real weather data if available, otherwise fallback to detail model
+    final humidity = !isPlaceholder
+        ? weather!.humidity.toString()
+        : detail.humidity.toString();
+    final wind = !isPlaceholder
+        ? weather!.windSpeed.toString()
+        : detail.windSpeed.toString();
+    final precipitation = !isPlaceholder
+        ? weather!.precipitation.toStringAsFixed(0)
+        : detail.precipitation.toStringAsFixed(0);
+    final sunrise = !isPlaceholder
+        ? weather!.sunrise
+        : _formatTime(detail.sunrise);
+    final sunset = !isPlaceholder
+        ? weather!.sunset
+        : _formatTime(detail.sunset);
+    final location = locationLabel ?? detail.location;
+
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: AppInsets.lg, vertical: AppInsets.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Header(detail: detail),
-              const SizedBox(height: AppInsets.lg),
-              Text('Condition Overview', style: AppTextStyles.headingMedium),
-              const SizedBox(height: AppInsets.md),
-              Wrap(
-                spacing: AppInsets.sm,
-                runSpacing: AppInsets.sm,
-                children: [
-                  _StatChip(label: 'Humidity', value: '${detail.humidity}%', icon: Icons.water_drop),
-                  _StatChip(label: 'Wind', value: '${detail.windSpeed} m/s', icon: Icons.air),
-                  _StatChip(label: 'Age Plant', value: '${detail.ageInMonths} month', icon: Icons.spa),
-                  _StatChip(label: 'Precipitation', value: '${detail.precipitation} mm', icon: Icons.grain),
-                  _StatChip(label: 'Sunrise', value: _timeLabel(detail.sunrise), icon: Icons.wb_sunny_outlined),
-                  _StatChip(label: 'Sunset', value: _timeLabel(detail.sunset), icon: Icons.nightlight_round),
-                ],
-              ),
-              const SizedBox(height: AppInsets.lg),
-              Text('Automation Tasks', style: AppTextStyles.headingMedium),
-              const SizedBox(height: AppInsets.md),
-              Wrap(
-                spacing: AppInsets.md,
-                runSpacing: AppInsets.md,
-                children: [
-                  for (final task in detail.tasks)
-                    _TaskCard(
-                      task: task,
-                    ),
-                ],
-              ),
-              const SizedBox(height: AppInsets.lg),
-              Text("Today's Weather", style: AppTextStyles.headingMedium),
-              const SizedBox(height: AppInsets.md),
-              _TemperatureTrendChart(trend: detail.temperatureTrend),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static String _timeLabel(DateTime time) {
-    final hours = time.hour % 12 == 0 ? 12 : time.hour % 12;
-    final suffix = time.hour >= 12 ? 'PM' : 'AM';
-    final minutes = time.minute.toString().padLeft(2, '0');
-    return '$hours:$minutes $suffix';
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.detail});
-
-  final PlantDetail detail;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppInsets.lg),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppCorners.lg),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
         children: [
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.of(context).maybePop(),
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(38),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.more_horiz, color: Colors.white),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppInsets.sm),
-          Text(
-            detail.name,
-            style: AppTextStyles.headingLarge.copyWith(color: Colors.white),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            detail.location,
-            style: AppTextStyles.bodySmall.copyWith(color: Colors.white70),
-          ),
-          const SizedBox(height: AppInsets.md),
-          Row(
-            children: [
-              _CounterTile(label: 'Plants', value: '${detail.totalPlants}'),
-              const SizedBox(width: AppInsets.md),
-              _CounterTile(label: 'Age', value: '${detail.ageInMonths} mo'),
-            ],
-          ),
-          const SizedBox(height: AppInsets.md),
+          // Green Header Background
           Container(
-            padding: const EdgeInsets.all(AppInsets.md),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(31),
-              borderRadius: BorderRadius.circular(AppCorners.md),
+            height: 280,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryGreen,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
             ),
-            child: Row(
+          ),
+          SafeArea(
+            child: Column(
               children: [
-                const Icon(Icons.calendar_today, color: Colors.white70, size: 18),
-                const SizedBox(width: 8),
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppInsets.lg,
+                    vertical: AppInsets.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          onPressed: () => Navigator.of(context).maybePop(),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: AppColors.primaryGreen,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(
-                  child: Text(
-                    'Planned activities are scheduled automatically based on sensor data.',
-                    style: AppTextStyles.bodySmall.copyWith(color: Colors.white70),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppInsets.lg,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: AppInsets.sm),
+                        Text(
+                          '${detail.totalPlants} Plants',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          detail.name,
+                          style: AppTextStyles.headingLarge.copyWith(
+                            color: Colors.white,
+                            fontSize: 28,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          location,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: AppInsets.xl),
+                        // Stats Card
+                        Container(
+                          padding: const EdgeInsets.all(AppInsets.lg),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(AppCorners.lg),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(10),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _StatItem(
+                                    label: 'Humidity',
+                                    value: '$humidity %',
+                                    icon: Icons.water_drop_outlined,
+                                  ),
+                                  _StatItem(
+                                    label: 'Wind',
+                                    value: '$wind m/s',
+                                    icon: Icons.air,
+                                  ),
+                                  _StatItem(
+                                    label: 'Age Plant',
+                                    value: '${detail.ageInMonths} month',
+                                    icon: Icons.spa_outlined,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppInsets.lg),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _StatItem(
+                                    label: 'Sunrise',
+                                    value: sunrise,
+                                    icon: Icons.wb_sunny_outlined,
+                                  ),
+                                  _StatItem(
+                                    label: 'Sunset',
+                                    value: sunset,
+                                    icon: Icons.wb_twilight,
+                                  ),
+                                  _StatItem(
+                                    label: 'Precipitation',
+                                    value: '$precipitation mm',
+                                    icon: Icons
+                                        .cloud_outlined, // Using cloud for precipitation
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppInsets.xl),
+                        // Control Cards
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: AppInsets.md,
+                                crossAxisSpacing: AppInsets.md,
+                                childAspectRatio: 1.0, // Fixed overflow
+                              ),
+                          itemCount: detail.tasks.length,
+                          itemBuilder: (context, index) {
+                            return _ControlCard(task: detail.tasks[index]);
+                          },
+                        ),
+                        const SizedBox(height: AppInsets.xl),
+                        Text(
+                          "Today's Weather",
+                          style: AppTextStyles.headingMedium,
+                        ),
+                        const SizedBox(height: AppInsets.md),
+                        // Weather Section
+                        _WeatherSection(weather: weather),
+                        const SizedBox(height: AppInsets.xl),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -145,44 +212,17 @@ class _Header extends StatelessWidget {
       ),
     );
   }
-}
 
-class _CounterTile extends StatelessWidget {
-  const _CounterTile({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(AppInsets.md),
-        decoration: BoxDecoration(
-          color: Colors.white.withAlpha(36),
-          borderRadius: BorderRadius.circular(AppCorners.md),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: AppTextStyles.caption.copyWith(color: Colors.white70),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: AppTextStyles.headingSmall.copyWith(color: Colors.white),
-            ),
-          ],
-        ),
-      ),
-    );
+  String _formatTime(DateTime time) {
+    final hour = time.hour > 12 ? time.hour - 12 : time.hour;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.hour >= 12 ? 'pm' : 'am';
+    return '$hour:$minute $period';
   }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({
+class _StatItem extends StatelessWidget {
+  const _StatItem({
     required this.label,
     required this.value,
     required this.icon,
@@ -194,151 +234,180 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.all(AppInsets.md),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(AppCorners.md),
-        boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(13),
-            blurRadius: 12,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
+    return SizedBox(
+      width: 80, // Fixed width for alignment
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.paleGreen,
-              borderRadius: BorderRadius.circular(AppCorners.sm),
-            ),
-            child: Icon(icon, color: AppColors.primaryGreen),
-          ),
-          const SizedBox(width: AppInsets.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: AppTextStyles.caption),
-                const SizedBox(height: 4),
-                Text(value, style: AppTextStyles.bodyMedium),
-              ],
-            ),
-          ),
+          Icon(icon, color: AppColors.accentOrange, size: 28),
+          const SizedBox(height: 8),
+          Text(label, style: AppTextStyles.caption.copyWith(fontSize: 11)),
+          const SizedBox(height: 4),
+          Text(value, style: AppTextStyles.headingSmall.copyWith(fontSize: 14)),
         ],
       ),
     );
   }
 }
 
-class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task});
+class _ControlCard extends StatefulWidget {
+  const _ControlCard({required this.task});
 
   final PlantTask task;
 
   @override
+  State<_ControlCard> createState() => _ControlCardState();
+}
+
+class _ControlCardState extends State<_ControlCard> {
+  late bool _isActive;
+
+  @override
+  void initState() {
+    super.initState();
+    _isActive = widget.task.isPrimary;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final color = task.isPrimary ? AppColors.accentOrange : AppColors.paleGreen;
-    final foreground = task.isPrimary ? Colors.white : AppColors.primaryGreen;
+    final textColor = _isActive ? Colors.white : AppColors.darkText;
+    final subTextColor = _isActive ? Colors.white70 : AppColors.mutedText;
+
+    // Map icon string to IconData
+    IconData iconData;
+    switch (widget.task.icon) {
+      case 'spray':
+        iconData = Icons.snowing;
+        break; // Closest to spray/snowflake icon
+      case 'lamp':
+        iconData = Icons.nightlight_round;
+        break;
+      case 'heater':
+        iconData = Icons.thermostat;
+        break;
+      case 'fertilizer':
+        iconData = Icons.spa;
+        break;
+      default:
+        iconData = Icons.device_unknown;
+    }
+
     return Container(
-      width: 150,
       padding: const EdgeInsets.all(AppInsets.md),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppCorners.md),
+        color: _isActive
+            ? const Color(0xFFE8B078)
+            : Colors.white, // Custom orange from image
+        borderRadius: BorderRadius.circular(AppCorners.lg),
+        boxShadow: [
+          if (!_isActive)
+            BoxShadow(
+              color: Colors.black.withAlpha(10),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+        ],
+        border: _isActive ? null : Border.all(color: AppColors.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: task.isPrimary ? Colors.white.withAlpha(51) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(_mapIcon(task.icon), color: foreground),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _isActive ? Colors.white : const Color(0xFFFFF4E8),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(iconData, color: const Color(0xFFE8B078), size: 20),
+              ),
+              Switch(
+                value: _isActive,
+                onChanged: (val) => setState(() => _isActive = val),
+                activeColor: const Color(0xFF2D5B55), // Dark green toggle
+                activeTrackColor: Colors.white,
+                inactiveThumbColor: Colors.grey[400],
+                inactiveTrackColor: Colors.grey[200],
+              ),
+            ],
           ),
-          const SizedBox(height: AppInsets.sm),
+          const Spacer(),
           Text(
-            task.name,
-            style: AppTextStyles.headingSmall.copyWith(color: foreground),
+            widget.task.name,
+            style: AppTextStyles.headingSmall.copyWith(color: textColor),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
-            task.durationLabel,
-            style: AppTextStyles.bodySmall.copyWith(color: foreground.withAlpha(204)),
+            widget.task.durationLabel,
+            style: AppTextStyles.caption.copyWith(color: subTextColor),
           ),
         ],
       ),
     );
   }
-
-  IconData _mapIcon(String icon) {
-    switch (icon) {
-      case 'spray':
-        return Icons.spa_rounded;
-      case 'lamp':
-        return Icons.lightbulb_outline;
-      case 'heater':
-        return Icons.local_fire_department_outlined;
-      case 'fertilizer':
-        return Icons.grass;
-      default:
-        return Icons.eco_outlined;
-    }
-  }
 }
 
-class _TemperatureTrendChart extends StatelessWidget {
-  const _TemperatureTrendChart({required this.trend});
+class _WeatherSection extends StatelessWidget {
+  const _WeatherSection({this.weather});
 
-  final List<int> trend;
+  final WeatherInfo? weather;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppInsets.lg),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(AppCorners.lg),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 12,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final temp = weather?.temperature.round().toString() ?? '24';
+    final low = weather?.low.round().toString() ?? '18';
+    final high = weather?.high.round().toString() ?? '30';
+    // Just a simple estimation for night temp
+    final night = ((weather?.low ?? 18) - 2).round().toString();
+
+    // Determine current time of day for selection
+    final hour = DateTime.now().hour;
+    final isMorning = hour >= 6 && hour < 12;
+    final isAfternoon = hour >= 12 && hour < 17;
+    final isEvening = hour >= 17 && hour < 21;
+    final isNight = hour >= 21 || hour < 6;
+
+    return SizedBox(
+      height: 220,
+      child: Stack(
         children: [
-          Row(
-            children: const [
-              Icon(Icons.thermostat, color: AppColors.primaryGreen),
-              SizedBox(width: 8),
-              Text('Temperature Trend', style: AppTextStyles.headingSmall),
-            ],
-          ),
-          const SizedBox(height: AppInsets.md),
-          SizedBox(
-            height: 140,
-            child: CustomPaint(
-              painter: _TrendPainter(trend: trend),
-              child: const SizedBox.expand(),
-            ),
-          ),
-          const SizedBox(height: AppInsets.sm),
+          // The curve painter
+          Positioned.fill(child: CustomPaint(painter: _WeatherCurvePainter())),
+          // Weather Items
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Morning', style: AppTextStyles.caption),
-              Text('Afternoon', style: AppTextStyles.caption),
-              Text('Evening', style: AppTextStyles.caption),
-              Text('Night', style: AppTextStyles.caption),
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _WeatherItem(
+                label: 'Morning',
+                temp: '$low°',
+                icon: Icons.cloud_outlined,
+                isSelected: isMorning,
+              ),
+              _WeatherItem(
+                label: 'Afternoon',
+                temp: '$high°',
+                icon: Icons.cloud_queue,
+                isSelected: isAfternoon,
+                offsetY: -40,
+              ),
+              _WeatherItem(
+                label: 'Evening',
+                temp: '$temp°',
+                icon: Icons.wb_sunny_outlined,
+                isSelected: isEvening,
+                offsetY: -20,
+              ),
+              _WeatherItem(
+                label: 'Night',
+                temp: '$night°',
+                icon: Icons.thunderstorm_outlined,
+                isSelected: isNight,
+                offsetY: 10,
+              ),
             ],
           ),
         ],
@@ -347,62 +416,152 @@ class _TemperatureTrendChart extends StatelessWidget {
   }
 }
 
-class _TrendPainter extends CustomPainter {
-  const _TrendPainter({required this.trend});
+class _WeatherItem extends StatelessWidget {
+  const _WeatherItem({
+    required this.label,
+    required this.temp,
+    required this.icon,
+    required this.isSelected,
+    this.offsetY = 0,
+  });
 
-  final List<int> trend;
+  final String label;
+  final String temp;
+  final IconData icon;
+  final bool isSelected;
+  final double offsetY;
 
   @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: Offset(0, offsetY),
+      child: Container(
+        width: 70,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: isSelected
+            ? BoxDecoration(
+                color: const Color(0xFF3A7F79), // Dark green card
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3A7F79).withOpacity(0.4),
+                    blurRadius: 15,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              )
+            : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: const Color(0xFFE8B078), size: 24),
+              ),
+            ] else
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.borderColor),
+                ),
+                child: Icon(icon, color: Colors.blue[300], size: 24),
+              ),
+
+            // Spacer to push text down relative to curve if needed,
+            // but here we just stack them. The curve goes through the middle.
+            // We need to position this carefully.
+            // In the design, the card covers the curve.
+            const SizedBox(height: 50), // Space for the curve to pass through
+
+            Text(
+              temp,
+              style: AppTextStyles.headingLarge.copyWith(
+                color: isSelected ? Colors.white : AppColors.darkText,
+                fontSize: 20,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                color: isSelected ? Colors.white70 : AppColors.mutedText,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WeatherCurvePainter extends CustomPainter {
+  @override
   void paint(Canvas canvas, Size size) {
-    if (trend.isEmpty) return;
-
-    final maxTemp = trend.reduce((a, b) => a > b ? a : b).toDouble();
-    final minTemp = trend.reduce((a, b) => a < b ? a : b).toDouble();
-    final range = (maxTemp - minTemp).clamp(1, double.infinity);
-    final spacing = size.width / (trend.length - 1);
-
-    final points = <Offset>[];
-    for (var i = 0; i < trend.length; i++) {
-      final value = trend[i].toDouble();
-      final dx = spacing * i;
-      final dy = size.height - ((value - minTemp) / range) * size.height;
-      points.add(Offset(dx, dy));
-    }
-
-    final paintLine = Paint()
-      ..color = AppColors.primaryGreen
+    final paint = Paint()
+      ..color = const Color(0xFFE8B078)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = 2;
 
-    final path = Path()..moveTo(points.first.dx, points.first.dy);
-    for (var i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx, points[i].dy);
-    }
-    canvas.drawPath(path, paintLine);
+    final path = Path();
 
-    final paintFill = Paint()
-      ..shader = const LinearGradient(
-        colors: [AppColors.primaryGreen, Colors.transparent],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..style = PaintingStyle.fill
-      ..color = AppColors.primaryGreen.withAlpha((255 * 0.15).round());
+    // Hardcoded curve points to match the visual roughly
+    final w = size.width;
+    final h = size.height;
 
-    final fillPath = Path.from(path)
-      ..lineTo(points.last.dx, size.height)
-      ..lineTo(points.first.dx, size.height)
-      ..close();
-    canvas.drawPath(fillPath, paintFill);
+    // Points roughly where the dots are
+    // Morning: x ~ 12%, y ~ 70%
+    // Afternoon: x ~ 37%, y ~ 50%
+    // Evening: x ~ 62%, y ~ 60%
+    // Night: x ~ 87%, y ~ 75%
 
+    final p1 = Offset(w * 0.12, h * 0.75);
+    final p2 = Offset(w * 0.37, h * 0.55);
+    final p3 = Offset(w * 0.62, h * 0.65);
+    final p4 = Offset(w * 0.87, h * 0.78);
+
+    path.moveTo(0, h * 0.8); // Start left
+
+    // Curve to p1
+    path.quadraticBezierTo(w * 0.06, h * 0.8, p1.dx, p1.dy);
+
+    // Curve p1 to p2
+    path.cubicTo(w * 0.2, h * 0.7, w * 0.28, h * 0.55, p2.dx, p2.dy);
+
+    // Curve p2 to p3
+    path.cubicTo(w * 0.45, h * 0.55, w * 0.5, h * 0.6, p3.dx, p3.dy);
+
+    // Curve p3 to p4
+    path.cubicTo(w * 0.7, h * 0.7, w * 0.8, h * 0.78, p4.dx, p4.dy);
+
+    // End right
+    path.quadraticBezierTo(w * 0.95, h * 0.78, w, h * 0.8);
+
+    canvas.drawPath(path, paint);
+
+    // Draw dots
     final dotPaint = Paint()
-      ..color = AppColors.accentOrange
-      ..style = PaintingStyle.fill;
+      ..color = const Color(0xFF3A7F79); // Dark green dots
+    final whitePaint = Paint()..color = Colors.white;
 
-    for (final point in points) {
-      canvas.drawCircle(point, 5, dotPaint);
+    void drawDot(Offset center, {bool isWhite = false}) {
+      if (isWhite) {
+        canvas.drawCircle(center, 6, whitePaint);
+      } else {
+        canvas.drawCircle(center, 4, dotPaint);
+      }
     }
+
+    drawDot(p1);
+    drawDot(p2);
+    drawDot(p3, isWhite: true); // The one on the card is white
+    drawDot(p4);
   }
 
   @override

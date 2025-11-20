@@ -1,3 +1,4 @@
+import 'dart:ui'; // For ImageFilter
 import 'package:flutter/material.dart';
 
 import '../utils/constants.dart';
@@ -24,31 +25,51 @@ class BottomNavBar extends StatelessWidget {
 
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.only(bottom: AppInsets.xs),
+      minimum: const EdgeInsets.only(bottom: AppInsets.md),
       child: Container(
-        margin: const EdgeInsets.fromLTRB(AppInsets.md, 0, AppInsets.md, AppInsets.sm),
-        padding: const EdgeInsets.symmetric(horizontal: AppInsets.md, vertical: AppInsets.xs),
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppInsets.md,
+        ), // Reduced margin from lg to md
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(AppCorners.md),
+          borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(12),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (var i = 0; i < items.length; i++)
-              _BottomNavButton(
-                item: items[i],
-                isActive: currentIndex == i,
-                onTap: () => onItemSelected(i),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(35),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppInsets.xs, // Reduced padding from sm to xs
+                vertical: AppInsets.sm,
               ),
-          ],
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(35),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var i = 0; i < items.length; i++)
+                    _BottomNavButton(
+                      item: items[i],
+                      isActive: currentIndex == i,
+                      onTap: () => onItemSelected(i),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -75,24 +96,56 @@ class _BottomNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppColors.primaryGreen : AppColors.mutedText;
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: AppInsets.xs, vertical: 4),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.paleGreen : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppCorners.md),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutQuart,
+        padding: EdgeInsets.symmetric(
+          horizontal: isActive ? 12 : 8, // Reduced padding: 16->12, 12->8
+          vertical: 10, // Reduced vertical padding slightly
         ),
-        child: Column(
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primaryGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(item.icon, color: color),
-            const SizedBox(height: 4),
-            Text(
-              item.label,
-              style: AppTextStyles.caption.copyWith(color: color),
+            Icon(
+              item.icon,
+              color: isActive ? Colors.white : AppColors.mutedText,
+              size: 24,
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: SizedBox(
+                width: isActive ? null : 0,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    item.label,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
             ),
           ],
         ),

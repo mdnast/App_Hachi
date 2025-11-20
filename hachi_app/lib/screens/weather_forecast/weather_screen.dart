@@ -10,29 +10,59 @@ import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
 
 class WeatherScreen extends StatefulWidget {
-  const WeatherScreen({super.key});
+  const WeatherScreen({
+    super.key,
+    required this.weather,
+    required this.locationLabel,
+    required this.onRefresh,
+    required this.isLoading,
+  });
+
+  final WeatherInfo weather;
+  final String locationLabel;
+  final VoidCallback onRefresh;
+  final bool isLoading;
 
   @override
   State<WeatherScreen> createState() => _WeatherScreenState();
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
-  final WeatherService _weatherService = WeatherService();
-  final LocationService _locationService = const LocationService();
-  WeatherInfo _weather = WeatherInfo.placeholder();
-  bool _isLoading = true;
   late DateTime _now;
   Timer? _clockTimer;
-  String _locationLabel = 'Detecting location…';
+  // We'll use the passed weather data, but we might need to fetch forecast if not available in WeatherInfo
+  // For now, let's assume WeatherInfo will eventually hold forecast or we fetch it here if needed.
+  // Actually, the current WeatherInfo model doesn't hold forecast list.
+  // The previous implementation fetched forecast.
+  // To keep it simple and consistent, we will use the passed current weather,
+  // but we might lose the daily/hourly forecast if we don't pass it or fetch it.
+  // However, the user's request is to "combine with api", and the main.dart fetches current weather.
+  // If we want full forecast, we should probably fetch it here or lift that state too.
+  // Given the constraint "like the other parts", let's use the passed data for current weather.
+  // For forecast, we might need to keep fetching it here or update WeatherInfo to hold it.
+  // Let's keep fetching forecast here for now but use the passed current weather for the main card.
+
+  final WeatherService _weatherService = WeatherService();
+  final LocationService _locationService = const LocationService();
   List<DailyForecast> _daily = const [];
   List<HourlyForecast> _hourlyToday = const [];
+  bool _isLoadingForecast = false;
 
   @override
   void initState() {
     super.initState();
     _now = DateTime.now();
     _startClock();
-    _loadWeather();
+    _loadForecast();
+  }
+
+  @override
+  void didUpdateWidget(WeatherScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.locationLabel != oldWidget.locationLabel &&
+        widget.locationLabel != 'Detecting location…') {
+      _loadForecast();
+    }
   }
 
   @override
@@ -42,50 +72,39 @@ class _WeatherScreenState extends State<WeatherScreen> {
   }
 
   void _startClock() {
-    _clockTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() {
         _now = DateTime.now();
       });
     });
   }
 
-  Future<void> _loadWeather() async {
+  Future<void> _loadForecast() async {
+    if (_isLoadingForecast) return;
     setState(() {
-      _isLoading = true;
+      _isLoadingForecast = true;
     });
     try {
       final position = await _locationService.getCurrentPosition();
-
-      String locationLabel;
-      try {
-        locationLabel = await _locationService.getLocationLabelFrom(position);
-      } catch (_) {
-        locationLabel = 'Current location';
-      }
-
       final forecast = await _weatherService.fetchForecastFor(
         position.latitude,
         position.longitude,
       );
+
       if (!mounted) return;
       setState(() {
-        _weather = forecast.current;
-        _isLoading = false;
-        _locationLabel = locationLabel;
-
         _daily = forecast.daily;
-
         _hourlyToday = forecast.hourly.where((h) {
           return h.time.year == _now.year &&
               h.time.month == _now.month &&
               h.time.day == _now.day;
         }).toList();
+        _isLoadingForecast = false;
       });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingForecast = false);
+      }
     }
   }
 
@@ -97,17 +116,23 @@ class _WeatherScreenState extends State<WeatherScreen> {
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: AppInsets.lg, vertical: AppInsets.lg),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppInsets.lg,
+            vertical: AppInsets.lg,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Weather Forecast', style: AppTextStyles.headingLarge),
+                  const Text(
+                    'Weather Forecast',
+                    style: AppTextStyles.headingLarge,
+                  ),
                   IconButton(
                     icon: const Icon(Icons.refresh, color: AppColors.mutedText),
-                    onPressed: _isLoading ? null : _loadWeather,
+                    onPressed: widget.isLoading ? null : widget.onRefresh,
                   ),
                 ],
               ),
@@ -115,60 +140,18 @@ class _WeatherScreenState extends State<WeatherScreen> {
               Text(todayLabel, style: AppTextStyles.bodySmall),
               const SizedBox(height: AppInsets.lg),
               _ForecastHeroCard(
-                weather: _weather,
+                weather: widget.weather,
                 now: _now,
-                isLoading: _isLoading,
-                onRefresh: _loadWeather,
-                locationLabel: _locationLabel,
+                isLoading: widget.isLoading,
+                onRefresh: widget.onRefresh,
+                locationLabel: widget.locationLabel,
               ),
+
               const SizedBox(height: AppInsets.lg),
-              Container(
-                padding: const EdgeInsets.all(AppInsets.lg),
-                decoration: BoxDecoration(
-                  color: AppColors.paleOrange,
-                  borderRadius: BorderRadius.circular(AppCorners.lg),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(AppCorners.sm),
-                      ),
-                      child: const Icon(Icons.warning_amber_rounded, color: AppColors.accentOrange),
-                    ),
-                    const SizedBox(width: AppInsets.md),
-                    Expanded(
-                      child: Text(
-                        'Be careful at the beginning of this year, extreme rain often occurs causing landslides and floods in certain places.',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.accentOrange),
-                      ),
-                    ),
-                  ],
-                ),
+              const Text(
+                "Today's Hourly Forecast",
+                style: AppTextStyles.headingMedium,
               ),
-              const SizedBox(height: AppInsets.lg),
-              const Text('Weekly Outlook', style: AppTextStyles.headingMedium),
-              const SizedBox(height: AppInsets.md),
-              Column(
-                children: [
-                  for (var i = 0; i < _daily.length && i < 5; i++) ...[
-                    _DayForecastRow(
-                      day: i == 0 ? 'Today' : formatWeekdayShort(_daily[i].date),
-                      description: formatFullDate(_daily[i].date),
-                      temperature:
-                          '${_daily[i].high.round()}° / ${_daily[i].low.round()}°',
-                      icon: _iconForCode(_daily[i].weatherCode),
-                      isToday: i == 0,
-                    ),
-                    if (i < _daily.length - 1 && i < 4)
-                      const SizedBox(height: AppInsets.sm),
-                  ],
-                ],
-              ),
-              const SizedBox(height: AppInsets.lg),
-              const Text("Today's Hourly Forecast", style: AppTextStyles.headingMedium),
               const SizedBox(height: AppInsets.md),
               SizedBox(
                 height: 110,
@@ -181,8 +164,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
                       )
                     : ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: _hourlyToday.length.clamp(0, 12),
-                        separatorBuilder: (_, __) => const SizedBox(width: AppInsets.sm),
+                        itemCount: _hourlyToday.length, // Show all hours
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppInsets.sm),
                         itemBuilder: (_, index) {
                           final hour = _hourlyToday[index];
                           return _HourlyForecastChip(
@@ -192,6 +176,27 @@ class _WeatherScreenState extends State<WeatherScreen> {
                           );
                         },
                       ),
+              ),
+              const SizedBox(height: AppInsets.lg),
+              const Text('Weekly Outlook', style: AppTextStyles.headingMedium),
+              const SizedBox(height: AppInsets.md),
+              Column(
+                children: [
+                  for (var i = 0; i < _daily.length && i < 5; i++) ...[
+                    _DayForecastRow(
+                      day: i == 0
+                          ? 'Today'
+                          : formatWeekdayShort(_daily[i].date),
+                      description: formatFullDate(_daily[i].date),
+                      temperature:
+                          '${_daily[i].high.round()}° / ${_daily[i].low.round()}°',
+                      icon: _iconForCode(_daily[i].weatherCode),
+                      isToday: i == 0,
+                    ),
+                    if (i < _daily.length - 1 && i < 4)
+                      const SizedBox(height: AppInsets.sm),
+                  ],
+                ],
               ),
             ],
           ),
@@ -245,12 +250,16 @@ class _ForecastHeroCard extends StatelessWidget {
                 children: [
                   Text(
                     locationLabel,
-                    style: AppTextStyles.bodySmall.copyWith(color: Colors.white70),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.white70,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     '${formatFullDate(now)}\n${formatTime(now)}',
-                    style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -269,8 +278,12 @@ class _ForecastHeroCard extends StatelessWidget {
               children: const [
                 Positioned.fill(child: _ArcPainterWidget()),
                 Positioned(
-                  top: 32,
-                  child: Icon(Icons.wb_sunny, color: Colors.yellowAccent, size: 48),
+                  top: 50, // Moved down from 32
+                  child: Icon(
+                    Icons.wb_sunny,
+                    color: Colors.yellowAccent,
+                    size: 48,
+                  ),
                 ),
               ],
             ),
@@ -279,11 +292,13 @@ class _ForecastHeroCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const _WeatherInfo(label: 'Sunrise', value: '5:20 AM'),
-              const _WeatherInfo(label: 'Sunset', value: '5:58 PM'),
+              _WeatherInfo(label: 'Sunrise', value: weather.sunrise),
+              _WeatherInfo(label: 'Sunset', value: weather.sunset),
               _WeatherInfo(
                 label: 'Temp',
-                value: weather.temperature == 0 ? '--°C' : '${weather.temperature.round()}°C',
+                value: weather.temperature == 0
+                    ? '--°C'
+                    : '${weather.temperature.round()}°C',
               ),
             ],
           ),
@@ -298,16 +313,17 @@ class _ArcPainterWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _ArcPainter(),
-    );
+    return CustomPaint(painter: _ArcPainter());
   }
 }
 
 class _ArcPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromCircle(center: size.center(Offset.zero), radius: size.width / 2.2);
+    final rect = Rect.fromCircle(
+      center: size.center(const Offset(0, 20)), // Moved center down by 20
+      radius: size.width / 2.2,
+    );
     final paintArc = Paint()
       ..color = Colors.white.withAlpha(64)
       ..style = PaintingStyle.stroke
@@ -317,7 +333,9 @@ class _ArcPainter extends CustomPainter {
     canvas.drawArc(rect, 3.4, 2.5, false, paintArc);
 
     final progressPaint = Paint()
-      ..shader = const LinearGradient(colors: [Colors.white, Colors.yellowAccent]).createShader(rect)
+      ..shader = const LinearGradient(
+        colors: [Colors.white, Colors.yellowAccent],
+      ).createShader(rect)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;
@@ -357,9 +375,15 @@ class _WeatherInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.caption.copyWith(color: Colors.white70)),
+        Text(
+          label,
+          style: AppTextStyles.caption.copyWith(color: Colors.white70),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
+        Text(
+          value,
+          style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+        ),
       ],
     );
   }
@@ -389,8 +413,8 @@ class _DayForecastRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppCorners.lg),
         boxShadow: isToday
             ? [
-          BoxShadow(
-            color: Colors.black.withAlpha(13),
+                BoxShadow(
+                  color: Colors.black.withAlpha(13),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -418,10 +442,7 @@ class _DayForecastRow extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            temperature,
-            style: AppTextStyles.headingSmall,
-          ),
+          Text(temperature, style: AppTextStyles.headingSmall),
         ],
       ),
     );
@@ -462,7 +483,10 @@ class _HourlyForecastChip extends StatelessWidget {
           const SizedBox(height: 6),
           Icon(icon, color: AppColors.primaryGreen, size: 20),
           const SizedBox(height: 6),
-          Text(temperature, style: AppTextStyles.bodySmall.copyWith(color: AppColors.darkText)),
+          Text(
+            temperature,
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.darkText),
+          ),
         ],
       ),
     );
