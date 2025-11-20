@@ -127,7 +127,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Weather Forecast',
+                    'Dự báo thời tiết',
                     style: AppTextStyles.headingLarge,
                   ),
                   IconButton(

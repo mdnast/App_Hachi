@@ -81,7 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String get _greeting {
     final hour = _now.hour;
     if (hour < 12) return 'Chào buổi sáng';
-    if (hour < 17) return 'Chào buổi chiều';
+    if (hour < 19) return 'Chào buổi chiều';
     return 'Chào buổi tối';
   }
 
@@ -289,6 +289,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<PlantArticle> _getPaginatedArticles() {
     final filtered = _getFilteredArticles();
+    // Show full list for "BÁO CHÍ NÓI VỀ HACHI"
+    if (_selectedCategory == 'BÁO CHÍ NÓI VỀ HACHI') {
+      return filtered;
+    }
+
     final startIndex = _currentPage * _itemsPerPage;
     final endIndex = (startIndex + _itemsPerPage < filtered.length)
         ? startIndex + _itemsPerPage
@@ -298,6 +303,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   int _getTotalPages() {
+    if (_selectedCategory == 'BÁO CHÍ NÓI VỀ HACHI') {
+      return 1;
+    }
     return (_getFilteredArticles().length / _itemsPerPage).ceil();
   }
 
@@ -422,21 +430,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _currentPage = 0; // Reset to first page on category change
         });
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(right: AppInsets.sm),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGreen : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          gradient: isSelected
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF7BBB55), // Primary green
+                    Color(0xFF6AA348), // Secondary green
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : Colors.grey[300]!,
+            color: isSelected
+                ? Colors.transparent
+                : Colors.grey.withOpacity(0.2),
+            width: 1.5,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF7BBB55).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Text(
           title,
           style: AppTextStyles.caption.copyWith(
             color: isSelected ? Colors.white : AppColors.darkText,
             fontWeight: FontWeight.w600,
+            fontSize: 11,
           ),
         ),
       ),

@@ -34,18 +34,19 @@ class LocationService {
       position.longitude,
     );
     if (placemarks.isEmpty) {
-      return 'Unknown location';
+      return 'Vị trí không xác định';
     }
 
     final place = placemarks.first;
     final parts = <String>[
       if ((place.locality ?? '').isNotEmpty) place.locality!,
-      if ((place.administrativeArea ?? '').isNotEmpty) place.administrativeArea!,
+      if ((place.administrativeArea ?? '').isNotEmpty)
+        place.administrativeArea!,
       if ((place.country ?? '').isNotEmpty) place.country!,
     ];
 
     if (parts.isEmpty) {
-      return 'Unknown location';
+      return 'Vị trí không xác định';
     }
     return parts.join(', ');
   }

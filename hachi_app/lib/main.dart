@@ -12,8 +12,12 @@ import 'screens/market/market_screen.dart';
 import 'utils/constants.dart';
 import 'widgets/bottom_nav_bar.dart';
 
+import 'package:intl/date_symbol_data_local.dart';
+
 void main() {
-  runApp(const HachiApp());
+  initializeDateFormatting('vi', null).then((_) {
+    runApp(const HachiApp());
+  });
 }
 
 class HachiApp extends StatelessWidget {
@@ -56,7 +60,7 @@ class _HomeShellState extends State<_HomeShell> {
   WeatherInfo _weather = WeatherInfo.placeholder();
   bool _isLoadingWeather = true;
   String? _weatherError;
-  String _locationLabel = 'Detecting location…';
+  String _locationLabel = 'Đang xác định vị trí…';
 
   @override
   void initState() {
@@ -76,7 +80,7 @@ class _HomeShellState extends State<_HomeShell> {
       try {
         locationLabel = await _locationService.getLocationLabelFrom(position);
       } catch (_) {
-        locationLabel = 'Current location';
+        locationLabel = 'Vị trí hiện tại';
       }
 
       final weather = await _weatherService.fetchCurrentWeatherFor(

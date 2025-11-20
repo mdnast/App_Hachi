@@ -30,13 +30,13 @@ class WeatherCard extends StatelessWidget {
         ? '${weather.temperature.round()}°C'
         : '--°C';
     final rangeLabel = hasMeasurements
-        ? 'Low ${weather.low.round()}°C  ·  High ${weather.high.round()}°C'
-        : 'Low --°C  ·  High --°C';
+        ? 'Thấp ${weather.low.round()}°C  ·  Cao ${weather.high.round()}°C'
+        : 'Thấp --°C  ·  Cao --°C';
     final updatedLabel = currentTime != null
-        ? 'Local Time: ${formatTime(currentTime!)}'
+        ? 'Giờ địa phương: ${formatTime(currentTime!)}'
         : (hasMeasurements
-              ? 'Updated ${formatTime(weather.lastUpdated)}'
-              : 'Awaiting latest update');
+              ? 'Cập nhật ${formatTime(weather.lastUpdated)}'
+              : 'Đang chờ cập nhật mới nhất');
 
     return Container(
       padding: const EdgeInsets.all(AppInsets.lg),

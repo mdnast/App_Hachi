@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import '../models/weather_model.dart';
 import '../utils/constants.dart';
@@ -107,8 +108,11 @@ class WeatherService {
 
     // Astro data for sunrise/sunset
     final astro = forecastDays.first['astro'] as Map<String, dynamic>?;
-    final sunrise = (astro?['sunrise'] as String?) ?? '--:--';
-    final sunset = (astro?['sunset'] as String?) ?? '--:--';
+    final sunriseRaw = (astro?['sunrise'] as String?) ?? '--:--';
+    final sunsetRaw = (astro?['sunset'] as String?) ?? '--:--';
+
+    final sunrise = _convertTo24Hour(sunriseRaw);
+    final sunset = _convertTo24Hour(sunsetRaw);
 
     final now = DateTime.now();
 
@@ -116,7 +120,7 @@ class WeatherService {
       temperature: currentTemp,
       low: todayMin,
       high: todayMax,
-      condition: conditionText,
+      condition: _translateWeatherCondition(conditionText),
       lastUpdated: now,
       humidity: humidity,
       windSpeed: windSpeed,
@@ -169,5 +173,86 @@ class WeatherService {
     }
 
     return (current: current, daily: dailyForecast, hourly: hourlyForecast);
+  }
+
+  /// Translate weather condition text to Vietnamese
+  String _translateWeatherCondition(String condition) {
+    final conditionLower = condition.toLowerCase();
+
+    // Common weather conditions mapping
+    final translations = {
+      'partly cloudy': 'Có mây',
+      'cloudy': 'Nhiều mây',
+      'overcast': 'U ám',
+      'mist': 'Sương mù',
+      'patchy rain possible': 'Có thể có mưa rải rác',
+      'patchy snow possible': 'Có thể có tuyết rải rác',
+      'patchy sleet possible': 'Có thể có mưa tuyết rải rác',
+      'patchy freezing drizzle possible': 'Có thể có mưa phùn đóng băng',
+      'thundery outbreaks possible': 'Có thể có giông',
+      'blowing snow': 'Tuyết thổi',
+      'blizzard': 'Bão tuyết',
+      'fog': 'Sương mù dày đặc',
+      'freezing fog': 'Sương mù đóng băng',
+      'patchy light drizzle': 'Mưa phùn nhẹ rải rác',
+      'light drizzle': 'Mưa phùn nhẹ',
+      'freezing drizzle': 'Mưa phùn đóng băng',
+      'heavy freezing drizzle': 'Mưa phùn đóng băng nặng',
+      'patchy light rain': 'Mưa nhẹ rải rác',
+      'light rain': 'Mưa nhẹ',
+      'moderate rain at times': 'Mưa vừa theo từng đợt',
+      'moderate rain': 'Mưa vừa',
+      'heavy rain at times': 'Mưa to theo từng đợt',
+      'heavy rain': 'Mưa to',
+      'light freezing rain': 'Mưa đóng băng nhẹ',
+      'moderate or heavy freezing rain': 'Mưa đóng băng vừa hoặc nặng',
+      'light sleet': 'Mưa tuyết nhẹ',
+      'moderate or heavy sleet': 'Mưa tuyết vừa hoặc nặng',
+      'patchy light snow': 'Tuyết nhẹ rải rác',
+      'light snow': 'Tuyết nhẹ',
+      'patchy moderate snow': 'Tuyết vừa rải rác',
+      'moderate snow': 'Tuyết vừa',
+      'patchy heavy snow': 'Tuyết nặng rải rác',
+      'heavy snow': 'Tuyết nặng',
+      'ice pellets': 'Mưa đá nhỏ',
+      'light rain shower': 'Mưa rào nhẹ',
+      'moderate or heavy rain shower': 'Mưa rào vừa hoặc to',
+      'torrential rain shower': 'Mưa rào xối xả',
+      'light sleet showers': 'Mưa tuyết rào nhẹ',
+      'moderate or heavy sleet showers': 'Mưa tuyết rào vừa hoặc nặng',
+      'light snow showers': 'Tuyết rào nhẹ',
+      'moderate or heavy snow showers': 'Tuyết rào vừa hoặc nặng',
+      'light showers of ice pellets': 'Mưa đá nhỏ rào nhẹ',
+      'moderate or heavy showers of ice pellets':
+          'Mưa đá nhỏ rào vừa hoặc nặng',
+      'patchy light rain with thunder': 'Mưa nhẹ có sấm rải rác',
+      'moderate or heavy rain with thunder': 'Mưa vừa hoặc to có sấm',
+      'patchy light snow with thunder': 'Tuyết nhẹ có sấm rải rác',
+      'moderate or heavy snow with thunder': 'Tuyết vừa hoặc nặng có sấm',
+      'clear': 'Quang đãng',
+      'sunny': 'Nắng',
+      'fair': 'Đẹp trời',
+    };
+
+    return translations[conditionLower] ?? condition;
+  }
+
+  /// Convert 12-hour time string (e.g., "06:30 AM") to 24-hour format (e.g., "06:30")
+  String _convertTo24Hour(String time12h) {
+    try {
+      // Remove leading/trailing spaces
+      time12h = time12h.trim();
+
+      // Parse using DateFormat
+      // The input format from WeatherAPI is typically "hh:mm a" (e.g., "05:43 AM")
+      final inputFormat = DateFormat('hh:mm a');
+      final outputFormat = DateFormat('HH:mm');
+
+      final dateTime = inputFormat.parse(time12h);
+      return outputFormat.format(dateTime);
+    } catch (e) {
+      // If parsing fails, return original string
+      return time12h;
+    }
   }
 }
