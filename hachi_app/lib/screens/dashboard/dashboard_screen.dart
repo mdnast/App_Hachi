@@ -10,8 +10,9 @@ import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
 import '../../widgets/article_card.dart';
 import '../../widgets/custom_app_bar.dart';
-import '../../widgets/plant_tab_bar.dart';
+
 import '../../widgets/weather_card.dart';
+import '../webview_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
@@ -36,12 +37,10 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedCategory = 0;
   late DateTime _now;
   Timer? _clockTimer;
   final ArticleService _articleService = ArticleService();
   late final List<PlantArticle> _articles;
-  late final List<String> _categories;
 
   @override
   void initState() {
@@ -49,7 +48,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _now = DateTime.now();
     _startClock();
     _articles = _articleService.fetchArticles();
-    _categories = ['All Plant', ..._articleService.availableCategoryLabels()];
   }
 
   @override
@@ -84,10 +82,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _handleArticleTap(PlantArticle article) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Would open article: ${article.url}'),
-        duration: const Duration(seconds: 2),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            WebViewScreen(url: article.url, title: article.source),
       ),
     );
   }
@@ -102,14 +100,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final weatherDescription = widget.isLoadingWeather
         ? 'Fetching latest weather data'
         : '${widget.weather.condition} • Low ${widget.weather.low.round()}°C • High ${widget.weather.high.round()}°C';
-    final selectedCategoryLabel = _categories[_selectedCategory];
-    final filteredArticles = selectedCategoryLabel == _categories.first
-        ? _articles
-        : _articles
-              .where(
-                (article) => article.category.label == selectedCategoryLabel,
-              )
-              .toList();
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
@@ -142,44 +132,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: AppInsets.lg),
-              child: Text('My Plantation', style: AppTextStyles.headingMedium),
+              child: Text('Blog', style: AppTextStyles.headingMedium),
             ),
             const SizedBox(height: AppInsets.sm),
-            PlantTabBar(
-              categories: _categories,
-              selectedIndex: _selectedCategory,
-              onCategorySelected: (index) {
-                setState(() => _selectedCategory = index);
-              },
-            ),
-            const SizedBox(height: AppInsets.sm),
-            if (filteredArticles.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppInsets.lg,
-                  vertical: AppInsets.md,
-                ),
-                child: Text(
-                  'No articles for $selectedCategoryLabel yet.',
-                  style: AppTextStyles.bodySmall,
-                ),
-              )
-            else
-              SizedBox(
-                height: 340,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(right: AppInsets.lg),
-                  itemCount: filteredArticles.length,
-                  itemBuilder: (context, index) {
-                    final article = filteredArticles[index];
-                    return ArticleCard(
-                      article: article,
-                      onTap: () => _handleArticleTap(article),
-                    );
-                  },
-                ),
+            SizedBox(
+              height: 380, // Increased height for cards with images
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(right: AppInsets.lg),
+                itemCount: _articles.length,
+                itemBuilder: (context, index) {
+                  final article = _articles[index];
+                  return ArticleCard(
+                    article: article,
+                    onTap: () => _handleArticleTap(article),
+                  );
+                },
               ),
+            ),
             const SizedBox(height: AppInsets.lg),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppInsets.lg),
