@@ -55,29 +55,40 @@ class PlantDetailScreen extends StatelessWidget {
           ),
           SafeArea(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Custom App Bar
+                // Fixed Header Content
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppInsets.lg,
                     vertical: AppInsets.sm,
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          onPressed: () => Navigator.of(context).maybePop(),
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: AppColors.primaryGreen,
-                            size: 18,
-                          ),
+                      const SizedBox(height: AppInsets.sm),
+                      Text(
+                        '${detail.totalPlants} Plants',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white70,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        detail.name,
+                        style: AppTextStyles.headingLarge.copyWith(
+                          color: Colors.white,
+                          fontSize: 28,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        location,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: AppInsets.lg),
                     ],
                   ),
                 ),
@@ -89,29 +100,9 @@ class PlantDetailScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: AppInsets.sm),
-                        Text(
-                          '${detail.totalPlants} Plants',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          detail.name,
-                          style: AppTextStyles.headingLarge.copyWith(
-                            color: Colors.white,
-                            fontSize: 28,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          location,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: AppInsets.xl),
+                        const SizedBox(
+                          height: AppInsets.sm,
+                        ), // Reduced top spacing
                         // Stats Card
                         Container(
                           padding: const EdgeInsets.all(AppInsets.lg),
@@ -238,7 +229,7 @@ class _StatItem extends StatelessWidget {
       width: 80, // Fixed width for alignment
       child: Column(
         children: [
-          Icon(icon, color: AppColors.accentOrange, size: 28),
+          Icon(icon, color: AppColors.primaryGreen, size: 28),
           const SizedBox(height: 8),
           Text(label, style: AppTextStyles.caption.copyWith(fontSize: 11)),
           const SizedBox(height: 4),
@@ -269,8 +260,11 @@ class _ControlCardState extends State<_ControlCard> {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = _isActive ? Colors.white : AppColors.darkText;
-    final subTextColor = _isActive ? Colors.white70 : AppColors.mutedText;
+    // Active: Green text, Inactive: Dark text
+    final textColor = _isActive ? AppColors.primaryGreen : AppColors.darkText;
+    final subTextColor = _isActive
+        ? AppColors.primaryGreen.withOpacity(0.7)
+        : AppColors.mutedText;
 
     // Map icon string to IconData
     IconData iconData;
@@ -294,19 +288,19 @@ class _ControlCardState extends State<_ControlCard> {
     return Container(
       padding: const EdgeInsets.all(AppInsets.md),
       decoration: BoxDecoration(
-        color: _isActive
-            ? const Color(0xFFE8B078)
-            : Colors.white, // Custom orange from image
+        color: Colors.white, // Always white background
         borderRadius: BorderRadius.circular(AppCorners.lg),
         boxShadow: [
-          if (!_isActive)
-            BoxShadow(
-              color: Colors.black.withAlpha(10),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
-        border: _isActive ? null : Border.all(color: AppColors.borderColor),
+        border: Border.all(
+          color: _isActive ? AppColors.primaryGreen : AppColors.borderColor,
+          width: _isActive ? 2.0 : 1.0,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,16 +311,22 @@ class _ControlCardState extends State<_ControlCard> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _isActive ? Colors.white : const Color(0xFFFFF4E8),
+                  color: _isActive
+                      ? AppColors.primaryGreen
+                      : const Color(0xFFF5F7F9),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(iconData, color: const Color(0xFFE8B078), size: 20),
+                child: Icon(
+                  iconData,
+                  color: _isActive ? Colors.white : AppColors.primaryGreen,
+                  size: 20,
+                ),
               ),
               Switch(
                 value: _isActive,
                 onChanged: (val) => setState(() => _isActive = val),
-                activeColor: const Color(0xFF2D5B55), // Dark green toggle
-                activeTrackColor: Colors.white,
+                activeColor: AppColors.primaryGreen, // Dark green toggle
+                activeTrackColor: AppColors.primaryGreen.withOpacity(0.2),
                 inactiveThumbColor: Colors.grey[400],
                 inactiveTrackColor: Colors.grey[200],
               ),
@@ -440,11 +440,11 @@ class _WeatherItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: isSelected
             ? BoxDecoration(
-                color: const Color(0xFF3A7F79), // Dark green card
+                color: AppColors.primaryGreen, // Dark green card
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF3A7F79).withOpacity(0.4),
+                    color: AppColors.primaryGreen.withOpacity(0.4),
                     blurRadius: 15,
                     offset: const Offset(0, 10),
                   ),
@@ -461,7 +461,7 @@ class _WeatherItem extends StatelessWidget {
                   color: Colors.white,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: const Color(0xFFE8B078), size: 24),
+                child: Icon(icon, color: AppColors.primaryGreen, size: 24),
               ),
             ] else
               Container(
@@ -505,7 +505,7 @@ class _WeatherCurvePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFE8B078)
+      ..color = AppColors.primaryGreen
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
@@ -546,8 +546,7 @@ class _WeatherCurvePainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     // Draw dots
-    final dotPaint = Paint()
-      ..color = const Color(0xFF3A7F79); // Dark green dots
+    final dotPaint = Paint()..color = AppColors.primaryGreen; // Dark green dots
     final whitePaint = Paint()..color = Colors.white;
 
     void drawDot(Offset center, {bool isWhite = false}) {

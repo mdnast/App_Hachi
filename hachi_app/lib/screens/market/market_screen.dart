@@ -47,12 +47,35 @@ class _MarketScreenState extends State<MarketScreen> {
               'fb-messenger',
             };
 
-            // Define hosts that should be launched externally (deep link wrappers)
-            final externalHosts = {'zalo.me', 'm.me', 'www.messenger.com'};
+            // Define hosts that should be launched externally (deep link wrappers & social media)
+            final externalHosts = {
+              'zalo.me',
+              'm.me',
+              'www.messenger.com',
+              'facebook.com',
+              'm.facebook.com',
+              'www.facebook.com',
+              'instagram.com',
+              'www.instagram.com',
+              'twitter.com',
+              'www.twitter.com',
+              'x.com',
+              'www.x.com',
+            };
 
             bool shouldLaunchExternally =
                 externalSchemes.contains(url.scheme) ||
                 externalHosts.contains(url.host);
+
+            // Also check if host ends with any of the external domains to catch subdomains
+            if (!shouldLaunchExternally) {
+              for (final host in externalHosts) {
+                if (url.host == host || url.host.endsWith('.$host')) {
+                  shouldLaunchExternally = true;
+                  break;
+                }
+              }
+            }
 
             // Special check for Facebook links that might be messages
             if (url.host.contains('facebook.com') &&
@@ -110,6 +133,28 @@ class _MarketScreenState extends State<MarketScreen> {
               const Center(
                 child: CircularProgressIndicator(color: AppColors.primaryGreen),
               ),
+            // Floating Back Button
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: FutureBuilder<bool>(
+                future: _controller.canGoBack(),
+                builder: (context, snapshot) {
+                  final canGoBack = snapshot.data ?? false;
+                  if (!canGoBack) return const SizedBox.shrink();
+
+                  return FloatingActionButton(
+                    onPressed: () async {
+                      if (await _controller.canGoBack()) {
+                        await _controller.goBack();
+                      }
+                    },
+                    backgroundColor: AppColors.primaryGreen,
+                    child: const Icon(Icons.arrow_back, color: Colors.white),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

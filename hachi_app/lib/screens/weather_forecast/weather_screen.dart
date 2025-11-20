@@ -227,7 +227,7 @@ class _ForecastHeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppInsets.lg),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF135E65), Color(0xFF0A8275)],
+          colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
