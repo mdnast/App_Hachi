@@ -16,11 +16,11 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _BottomNavItem(Icons.home_rounded, 'Home'),
-      _BottomNavItem(Icons.eco_rounded, 'Plant'),
-      _BottomNavItem(Icons.calendar_today_rounded, 'Schedule'),
-      _BottomNavItem(Icons.cloud_outlined, 'Weather'),
-      _BottomNavItem(Icons.shopping_bag_outlined, 'Market'),
+      _BottomNavItem(Icons.home_rounded, 'Trang chủ'),
+      _BottomNavItem(Icons.eco_rounded, 'Cây trồng'),
+      _BottomNavItem(Icons.calendar_today_rounded, 'Lịch trình'),
+      _BottomNavItem(Icons.cloud_outlined, 'Thời tiết'),
+      _BottomNavItem(Icons.shopping_bag_outlined, 'Chợ'),
     ];
 
     return SafeArea(

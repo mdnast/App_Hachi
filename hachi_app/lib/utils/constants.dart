@@ -76,7 +76,7 @@ class AppCorners {
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'Hachi Weather';
+  static const String appName = 'Hachi Thời tiết';
 
   // WeatherAPI.com configuration
   static const String apiKey = 'a4cdb439d6b745bfbf5110911251711';

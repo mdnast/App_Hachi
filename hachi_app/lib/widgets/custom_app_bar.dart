@@ -21,7 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onNotificationTap;
 
   @override
-  Size get preferredSize => const Size.fromHeight(220);
+  Size get preferredSize => const Size.fromHeight(100);
 
   @override
   Widget build(BuildContext context) {
@@ -73,44 +73,45 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppInsets.md),
-            Container(
-              padding: const EdgeInsets.all(AppInsets.md),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(26),
-                borderRadius: BorderRadius.circular(AppCorners.md),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.wb_sunny_outlined, color: Colors.white),
-                  const SizedBox(width: AppInsets.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          weatherLabel,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          weatherDescription,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: onSearchTap,
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
+            // Weather card removed for cleaner design
+            // const SizedBox(height: AppInsets.md),
+            // Container(
+            //   padding: const EdgeInsets.all(AppInsets.md),
+            //   decoration: BoxDecoration(
+            //     color: Colors.white.withAlpha(26),
+            //     borderRadius: BorderRadius.circular(AppCorners.md),
+            //   ),
+            //   child: Row(
+            //     children: [
+            //       const Icon(Icons.wb_sunny_outlined, color: Colors.white),
+            //       const SizedBox(width: AppInsets.sm),
+            //       Expanded(
+            //         child: Column(
+            //           crossAxisAlignment: CrossAxisAlignment.start,
+            //           children: [
+            //             Text(
+            //               weatherLabel,
+            //               style: AppTextStyles.bodyMedium.copyWith(
+            //                 color: Colors.white,
+            //               ),
+            //             ),
+            //             const SizedBox(height: 2),
+            //             Text(
+            //               weatherDescription,
+            //               style: AppTextStyles.bodySmall.copyWith(
+            //                 color: Colors.white70,
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //       IconButton(
+            //         onPressed: onSearchTap,
+            //         icon: const Icon(Icons.refresh, color: Colors.white),
+            //       ),
+            //     ],
+            //   ),
+            // ),
           ],
         ),
       ),

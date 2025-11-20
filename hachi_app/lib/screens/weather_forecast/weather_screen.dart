@@ -149,7 +149,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
               const SizedBox(height: AppInsets.lg),
               const Text(
-                "Today's Hourly Forecast",
+                'Dự báo theo giờ hôm nay',
                 style: AppTextStyles.headingMedium,
               ),
               const SizedBox(height: AppInsets.md),
@@ -158,7 +158,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 child: _hourlyToday.isEmpty
                     ? Center(
                         child: Text(
-                          'No hourly data available.',
+                          'Không có dữ liệu theo giờ.',
                           style: AppTextStyles.bodySmall,
                         ),
                       )
@@ -178,14 +178,14 @@ class _WeatherScreenState extends State<WeatherScreen> {
                       ),
               ),
               const SizedBox(height: AppInsets.lg),
-              const Text('Weekly Outlook', style: AppTextStyles.headingMedium),
+              const Text('Dự báo tuần', style: AppTextStyles.headingMedium),
               const SizedBox(height: AppInsets.md),
               Column(
                 children: [
                   for (var i = 0; i < _daily.length && i < 5; i++) ...[
                     _DayForecastRow(
                       day: i == 0
-                          ? 'Today'
+                          ? 'Hôm nay'
                           : formatWeekdayShort(_daily[i].date),
                       description: formatFullDate(_daily[i].date),
                       temperature:
@@ -292,10 +292,10 @@ class _ForecastHeroCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _WeatherInfo(label: 'Sunrise', value: weather.sunrise),
-              _WeatherInfo(label: 'Sunset', value: weather.sunset),
+              _WeatherInfo(label: 'Bình minh', value: weather.sunrise),
+              _WeatherInfo(label: 'Hoàng hôn', value: weather.sunset),
               _WeatherInfo(
-                label: 'Temp',
+                label: 'Nhiệt độ',
                 value: weather.temperature == 0
                     ? '--°C'
                     : '${weather.temperature.round()}°C',

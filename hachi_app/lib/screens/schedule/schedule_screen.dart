@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../models/activity_model.dart';
 import '../../utils/constants.dart';
-import '../../utils/helpers.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -126,8 +125,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _ScheduleFormSheet(
-        sheetTitle: 'Add Schedule',
-        submitLabel: 'Save Schedule',
+        sheetTitle: 'Thêm lịch trình',
+        submitLabel: 'Lưu lịch trình',
         initialDate: _selectedDate,
       ),
     );
@@ -151,8 +150,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _ScheduleFormSheet(
-        sheetTitle: 'Edit Schedule',
-        submitLabel: 'Update Schedule',
+        sheetTitle: 'Sửa lịch trình',
+        submitLabel: 'Cập nhật lịch trình',
         initialDate: activity.startTime,
         initialActivity: activity,
       ),
@@ -177,7 +176,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         onPressed: _showAddScheduleSheet,
         backgroundColor: AppColors.primaryGreen,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Task', style: TextStyle(color: Colors.white)),
+        label: const Text(
+          'Thêm công việc',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -193,7 +195,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Daily Schedule',
+                        'Lịch trình hàng ngày',
                         style: AppTextStyles.headingLarge,
                       ),
                       const SizedBox(height: 4),
@@ -334,7 +336,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No tasks for ${DateFormat('MMM d').format(_selectedDate)}',
+                            'Không có công việc cho ngày ${DateFormat('d/M').format(_selectedDate)}',
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: AppColors.mutedText,
                             ),
@@ -386,16 +388,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             return await showDialog<bool>(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title: const Text('Delete Task'),
+                                    title: const Text('Xóa công việc'),
                                     content: const Text(
-                                      'Are you sure you want to delete this task?',
+                                      'Bạn có chắc chắn muốn xóa công việc này không?',
                                     ),
                                     actions: [
                                       TextButton(
                                         onPressed: () =>
                                             Navigator.of(context).pop(false),
                                         child: const Text(
-                                          'Cancel',
+                                          'Hủy',
                                           style: TextStyle(
                                             color: AppColors.mutedText,
                                           ),
@@ -405,7 +407,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                         onPressed: () =>
                                             Navigator.of(context).pop(true),
                                         child: const Text(
-                                          'Delete',
+                                          'Xóa',
                                           style: TextStyle(
                                             color: Colors.redAccent,
                                           ),
@@ -567,7 +569,7 @@ class _ScheduleCard extends StatelessWidget {
                         children: [
                           Icon(Icons.edit, size: 18),
                           SizedBox(width: 8),
-                          Text('Edit'),
+                          Text('Sửa'),
                         ],
                       ),
                     ),
@@ -577,7 +579,7 @@ class _ScheduleCard extends StatelessWidget {
                         children: [
                           Icon(Icons.delete, size: 18, color: Colors.red),
                           SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
+                          Text('Xóa', style: TextStyle(color: Colors.red)),
                         ],
                       ),
                     ),
@@ -618,7 +620,7 @@ class _ScheduleCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isCompleted ? 'Completed' : 'Mark as Done',
+                    isCompleted ? 'Hoàn thành' : 'Đánh dấu hoàn thành',
                     style: TextStyle(
                       color: isCompleted
                           ? AppColors.primaryGreen
@@ -755,7 +757,7 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
     final location = _locationController.text.trim();
     if (title.isEmpty || location.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title and location are required.')),
+        const SnackBar(content: Text('Tiêu đề và địa điểm là bắt buộc.')),
       );
       return;
     }
@@ -832,19 +834,19 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
 
             _buildTextField(
               controller: _titleController,
-              label: 'Task Title',
+              label: 'Tiêu đề công việc',
               icon: Icons.task_alt,
             ),
             const SizedBox(height: AppInsets.md),
 
             _buildTextField(
               controller: _locationController,
-              label: 'Location',
+              label: 'Địa điểm',
               icon: Icons.location_on_outlined,
             ),
             const SizedBox(height: AppInsets.lg),
 
-            const Text('Date & Time', style: AppTextStyles.headingSmall),
+            const Text('Ngày & Giờ', style: AppTextStyles.headingSmall),
             const SizedBox(height: AppInsets.md),
 
             Container(
@@ -857,7 +859,7 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
               child: Column(
                 children: [
                   _buildDateTimeRow(
-                    label: 'Date',
+                    label: 'Ngày',
                     value: DateFormat('EEE, MMM d, yyyy').format(_chosenDate),
                     icon: Icons.calendar_today,
                     onTap: _pickDate,
@@ -867,7 +869,7 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
                     children: [
                       Expanded(
                         child: _buildDateTimeRow(
-                          label: 'Start',
+                          label: 'Bắt đầu',
                           value: _startTime.format(context),
                           icon: Icons.access_time,
                           onTap: () => _pickTime(start: true),
@@ -881,7 +883,7 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
                       ),
                       Expanded(
                         child: _buildDateTimeRow(
-                          label: 'End',
+                          label: 'Kết thúc',
                           value: _endTime.format(context),
                           icon: Icons.access_time_filled,
                           onTap: () => _pickTime(start: false),

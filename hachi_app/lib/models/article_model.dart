@@ -2,7 +2,15 @@ enum ArticleCategory {
   fruit('Fruit'),
   vegetable('Vegetable'),
   herbs('Herbs'),
-  sweetPotato('Sweet Potato');
+  sweetPotato('Sweet Potato'),
+  nhaMang('NHÀ MÀNG NÔNG NGHIỆP'),
+  dinhDuong('DINH DƯỠNG THỦY CANH'),
+  congNgheCao('NÔNG NGHIỆP CÔNG NGHỆ CAO'),
+  camNang('CẨM NANG THỦY CANH'),
+  chieuSang('CHIẾU SÁNG NHÂN TẠO'),
+  heThongTuoi('HỆ THỐNG TƯỚI'),
+  kinhNghiem('KINH NGHIỆM TRỒNG RAU'),
+  baoChiNoiVeHachi('BÁO CHÍ NÓI VỀ HACHI');
 
   const ArticleCategory(this.label);
 

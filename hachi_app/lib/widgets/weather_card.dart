@@ -117,7 +117,7 @@ class WeatherCard extends StatelessWidget {
                     )
                   : const Icon(Icons.refresh, size: 16),
               label: Text(
-                isLoading ? 'Updating…' : 'Refresh',
+                isLoading ? 'Đang cập nhật…' : 'Làm mới',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.primaryGreen,
                 ),

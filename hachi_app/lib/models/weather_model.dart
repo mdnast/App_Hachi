@@ -53,7 +53,7 @@ class WeatherInfo {
     final now = DateTime.now();
     return WeatherInfo(
       temperature: 0,
-      condition: 'Updating…',
+      condition: 'Đang cập nhật…',
       low: 0,
       high: 0,
       lastUpdated: now,

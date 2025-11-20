@@ -21,7 +21,7 @@ class PlantDetailScreen extends StatelessWidget {
     // Check if weather is placeholder (e.g. humidity is 0 and condition is Updating...)
     final isPlaceholder =
         weather == null ||
-        (weather!.humidity == 0 && weather!.condition == 'Updating…');
+        (weather!.humidity == 0 && weather!.condition == 'Đang cập nhật…');
 
     // Use real weather data if available, otherwise fallback to detail model
     final humidity = !isPlaceholder
@@ -124,18 +124,18 @@ class PlantDetailScreen extends StatelessWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   _StatItem(
-                                    label: 'Humidity',
+                                    label: 'Độ ẩm',
                                     value: '$humidity %',
                                     icon: Icons.water_drop_outlined,
                                   ),
                                   _StatItem(
-                                    label: 'Wind',
+                                    label: 'Gió',
                                     value: '$wind m/s',
                                     icon: Icons.air,
                                   ),
                                   _StatItem(
-                                    label: 'Age Plant',
-                                    value: '${detail.ageInMonths} month',
+                                    label: 'Tuổi cây',
+                                    value: '${detail.ageInMonths} tháng',
                                     icon: Icons.spa_outlined,
                                   ),
                                 ],
@@ -146,17 +146,17 @@ class PlantDetailScreen extends StatelessWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   _StatItem(
-                                    label: 'Sunrise',
+                                    label: 'Bình minh',
                                     value: sunrise,
                                     icon: Icons.wb_sunny_outlined,
                                   ),
                                   _StatItem(
-                                    label: 'Sunset',
+                                    label: 'Hoàng hôn',
                                     value: sunset,
                                     icon: Icons.wb_twilight,
                                   ),
                                   _StatItem(
-                                    label: 'Precipitation',
+                                    label: 'Lượng mưa',
                                     value: '$precipitation mm',
                                     icon: Icons
                                         .cloud_outlined, // Using cloud for precipitation
@@ -185,7 +185,7 @@ class PlantDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: AppInsets.xl),
                         Text(
-                          "Today's Weather",
+                          'Thời tiết hôm nay',
                           style: AppTextStyles.headingMedium,
                         ),
                         const SizedBox(height: AppInsets.md),
@@ -384,27 +384,27 @@ class _WeatherSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _WeatherItem(
-                  label: 'Morning',
+                  label: 'Sáng',
                   temp: '$low°',
                   icon: Icons.cloud_outlined,
                   isSelected: isMorning,
                 ),
                 _WeatherItem(
-                  label: 'Afternoon',
+                  label: 'Chiều',
                   temp: '$high°',
                   icon: Icons.cloud_queue,
                   isSelected: isAfternoon,
                   offsetY: -50, // Adjusted offset
                 ),
                 _WeatherItem(
-                  label: 'Evening',
+                  label: 'Tối',
                   temp: '$temp°',
                   icon: Icons.wb_sunny_outlined,
                   isSelected: isEvening,
                   offsetY: -20,
                 ),
                 _WeatherItem(
-                  label: 'Night',
+                  label: 'Đêm',
                   temp: '$night°',
                   icon: Icons.thunderstorm_outlined,
                   isSelected: isNight,
