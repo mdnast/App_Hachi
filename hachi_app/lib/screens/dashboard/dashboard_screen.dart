@@ -42,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Timer? _clockTimer;
   final ArticleService _articleService = ArticleService();
   late final List<PlantArticle> _articles;
-  String _selectedCategory = 'BÁO CHÍ NÓI VỀ HACHI';
+  String _selectedCategory = 'NÔNG NGHIỆP CÔNG NGHỆ CAO';
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 
