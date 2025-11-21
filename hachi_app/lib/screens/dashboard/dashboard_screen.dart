@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+// Đảm bảo các đường dẫn import này đúng với project của bạn
 import '../../models/article_model.dart';
 import '../../models/plant_model.dart';
 import '../../models/weather_model.dart';
@@ -11,6 +12,7 @@ import '../../utils/helpers.dart';
 
 import '../../widgets/article_card.dart';
 import '../../widgets/custom_app_bar.dart';
+import '../../widgets/compact_chat_widget.dart';
 
 import '../../widgets/weather_card.dart';
 import '../webview_screen.dart';
@@ -67,11 +69,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _now = now;
       });
 
-      // Tự refresh thời tiết định kỳ khi đang ở màn hình Home, tránh phải ấn tay.
       if (!widget.isLoadingWeather) {
         final lastUpdated = widget.weather.lastUpdated;
         if (now.difference(lastUpdated) > const Duration(minutes: 15)) {
-          // Gọi callback refresh từ parent
           widget.onRefreshWeather();
         }
       }
@@ -134,29 +134,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 currentTime: _now,
               ),
             ),
-            const SizedBox(height: AppInsets.xs),
+            const SizedBox(height: 4),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: AppInsets.lg),
               child: Text('Tin tức', style: AppTextStyles.headingMedium),
             ),
-            const SizedBox(height: AppInsets.sm),
+            const SizedBox(height: 0),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppInsets.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _buildCategoryChip(
                     'BÁO CHÍ NÓI VỀ HACHI',
                     _selectedCategory == 'BÁO CHÍ NÓI VỀ HACHI',
                   ),
-                  const SizedBox(height: 8),
-                  _buildCategoryDropdown(),
+                  const CompactChatWidget(),
                 ],
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [const SizedBox(height: 8), _buildCategoryDropdown()],
+              ),
+            ),
             const SizedBox(height: AppInsets.md),
+
+            // --- Phần ListView ---
             SizedBox(
-              height: 380, // Increased height for cards with images
+              height: 380,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.only(right: AppInsets.lg),
@@ -170,6 +179,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
+
+            // --- Phần Pagination ---
             if (_getTotalPages() > 1) ...[
               const SizedBox(height: AppInsets.md),
               _buildPagination(),
@@ -263,7 +274,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<PlantArticle> _getPaginatedArticles() {
     final filtered = _getFilteredArticles();
-    // Show full list for "BÁO CHÍ NÓI VỀ HACHI"
     if (_selectedCategory == 'BÁO CHÍ NÓI VỀ HACHI') {
       return filtered;
     }
@@ -285,13 +295,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildPagination() {
     final totalPages = _getTotalPages();
-
-    // Calculate which pages to show (max 5 pages)
     int startPage = 0;
     int endPage = totalPages - 1;
 
     if (totalPages > 5) {
-      // Calculate the window around current page
       startPage = (_currentPage - 2).clamp(0, totalPages - 5);
       endPage = startPage + 4;
     }
@@ -299,7 +306,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Previous button
         GestureDetector(
           onTap: _currentPage > 0
               ? () {
@@ -326,7 +332,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
-        // Page numbers (max 5 pages in sliding window)
         ...List.generate(endPage - startPage + 1, (i) {
           final pageIndex = startPage + i;
           final isSelected = pageIndex == _currentPage;
@@ -361,7 +366,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         }),
-        // Next button
         GestureDetector(
           onTap: _currentPage < totalPages - 1
               ? () {
@@ -401,7 +405,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: () {
         setState(() {
           _selectedCategory = title;
-          _currentPage = 0; // Reset to first page on category change
+          _currentPage = 0;
         });
       },
       child: AnimatedContainer(
@@ -413,10 +417,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ? const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF7BBB55), // Primary green
-                    Color(0xFF6AA348), // Secondary green
-                  ],
+                  colors: [Color(0xFF7BBB55), Color(0xFF6AA348)],
                 )
               : null,
           color: isSelected ? null : Colors.white,
@@ -567,7 +568,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+// ĐÃ ĐÓNG Class _DashboardScreenState TẠI ĐÂY
 
+// Class này nằm ngoài cùng, không bị lồng vào trong
 class _WeatherPeriod extends StatelessWidget {
   const _WeatherPeriod({
     required this.label,
