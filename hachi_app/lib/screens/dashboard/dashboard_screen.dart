@@ -134,49 +134,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 currentTime: _now,
               ),
             ),
+            const SizedBox(height: AppInsets.xs),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: AppInsets.lg),
               child: Text('Tin tức', style: AppTextStyles.headingMedium),
             ),
             const SizedBox(height: AppInsets.sm),
-            SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: AppInsets.lg),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppInsets.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildCategoryChip(
                     'BÁO CHÍ NÓI VỀ HACHI',
                     _selectedCategory == 'BÁO CHÍ NÓI VỀ HACHI',
                   ),
-                  _buildCategoryChip(
-                    'NHÀ MÀNG NÔNG NGHIỆP',
-                    _selectedCategory == 'NHÀ MÀNG NÔNG NGHIỆP',
-                  ),
-                  _buildCategoryChip(
-                    'DINH DƯỠNG THỦY CANH',
-                    _selectedCategory == 'DINH DƯỠNG THỦY CANH',
-                  ),
-                  _buildCategoryChip(
-                    'NÔNG NGHIỆP CÔNG NGHỆ CAO',
-                    _selectedCategory == 'NÔNG NGHIỆP CÔNG NGHỆ CAO',
-                  ),
-                  _buildCategoryChip(
-                    'CẨM NANG THỦY CANH',
-                    _selectedCategory == 'CẨM NANG THỦY CANH',
-                  ),
-                  _buildCategoryChip(
-                    'CHIẾU SÁNG NHÂN TẠO',
-                    _selectedCategory == 'CHIẾU SÁNG NHÂN TẠO',
-                  ),
-                  _buildCategoryChip(
-                    'HỆ THỐNG TƯỚI',
-                    _selectedCategory == 'HỆ THỐNG TƯỚI',
-                  ),
-                  _buildCategoryChip(
-                    'KINH NGHIỆM TRỒNG RAU',
-                    _selectedCategory == 'KINH NGHIỆM TRỒNG RAU',
-                  ),
+                  const SizedBox(height: 8),
+                  _buildCategoryDropdown(),
                 ],
               ),
             ),
@@ -433,7 +407,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(right: AppInsets.sm),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
@@ -474,8 +448,120 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: AppTextStyles.caption.copyWith(
             color: isSelected ? Colors.white : AppColors.darkText,
             fontWeight: FontWeight.w600,
-            fontSize: 11,
+            fontSize: 10,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    final categories = [
+      'NHÀ MÀNG NÔNG NGHIỆP',
+      'DINH DƯỠNG THỦY CANH',
+      'NÔNG NGHIỆP CÔNG NGHỆ CAO',
+      'CẨM NANG THỦY CANH',
+      'CHIẾU SÁNG NHÂN TẠO',
+      'HỆ THỐNG TƯỚI',
+      'KINH NGHIỆM TRỒNG RAU',
+    ];
+
+    final isAnySelected = categories.contains(_selectedCategory);
+    final displayText = isAnySelected
+        ? _selectedCategory
+        : 'THÔNG TIN NÔNG NGHIỆP';
+
+    return PopupMenuButton<String>(
+      onSelected: (String value) {
+        setState(() {
+          _selectedCategory = value;
+          _currentPage = 0;
+        });
+      },
+      offset: const Offset(0, 45),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      itemBuilder: (BuildContext context) {
+        return categories.map((String category) {
+          final isSelected = category == _selectedCategory;
+          return PopupMenuItem<String>(
+            value: category,
+            child: Row(
+              children: [
+                if (isSelected)
+                  const Icon(Icons.check, color: Color(0xFF7BBB55), size: 18),
+                if (isSelected) const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    category,
+                    style: AppTextStyles.caption.copyWith(
+                      color: isSelected
+                          ? const Color(0xFF7BBB55)
+                          : AppColors.darkText,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: isAnySelected
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF7BBB55), Color(0xFF6AA348)],
+                )
+              : null,
+          color: isAnySelected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isAnySelected
+                ? Colors.transparent
+                : Colors.grey.withOpacity(0.2),
+            width: 1.5,
+          ),
+          boxShadow: isAnySelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF7BBB55).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              displayText,
+              style: AppTextStyles.caption.copyWith(
+                color: isAnySelected ? Colors.white : AppColors.darkText,
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              color: isAnySelected ? Colors.white : AppColors.darkText,
+              size: 20,
+            ),
+          ],
         ),
       ),
     );

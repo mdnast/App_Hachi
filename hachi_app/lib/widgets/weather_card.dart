@@ -39,7 +39,7 @@ class WeatherCard extends StatelessWidget {
               : 'Đang chờ cập nhật mới nhất');
 
     return Container(
-      padding: const EdgeInsets.all(AppInsets.lg),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(AppCorners.lg),
@@ -65,13 +65,13 @@ class WeatherCard extends StatelessWidget {
                       locationLabel ?? 'Weather',
                       style: AppTextStyles.headingSmall,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(weather.condition, style: AppTextStyles.bodySmall),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppColors.paleGreen,
                   shape: BoxShape.circle,
@@ -79,18 +79,19 @@ class WeatherCard extends StatelessWidget {
                 child: const Icon(
                   Icons.wb_sunny,
                   color: AppColors.primaryGreen,
+                  size: 20,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppInsets.md),
+          const SizedBox(height: 8),
           Text(
             tempLabel,
-            style: AppTextStyles.headingLarge.copyWith(fontSize: 40),
+            style: AppTextStyles.headingLarge.copyWith(fontSize: 32),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(rangeLabel, style: AppTextStyles.bodySmall),
-          const SizedBox(height: AppInsets.sm),
+          const SizedBox(height: 6),
           Text(updatedLabel, style: AppTextStyles.caption),
           if (errorMessage != null) ...[
             const SizedBox(height: AppInsets.sm),
@@ -99,31 +100,6 @@ class WeatherCard extends StatelessWidget {
               style: AppTextStyles.bodySmall.copyWith(color: Colors.redAccent),
             ),
           ],
-          const SizedBox(height: AppInsets.md),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: isLoading ? null : onRefresh,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(0, 0),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              icon: isLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh, size: 16),
-              label: Text(
-                isLoading ? 'Đang cập nhật…' : 'Làm mới',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.primaryGreen,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
