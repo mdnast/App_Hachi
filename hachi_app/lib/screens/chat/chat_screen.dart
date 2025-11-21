@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:markdown/markdown.dart' as md;
 import '../../models/chat_message.dart';
 import '../../services/chat_service.dart';
 import '../../utils/constants.dart';
@@ -93,7 +95,7 @@ class _ChatScreenState extends State<ChatScreen> {
       backgroundColor: AppColors.lightBackground,
       appBar: AppBar(
         title: const Text(
-          'Trợ lý AI Nông nghiệp',
+          'Trợ lý AI Hachi',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
@@ -149,7 +151,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'AI đang trả lời...',
+                    'Hachi AI đang trả lời...',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.mutedText,
                     ),
@@ -177,7 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: TextField(
                     controller: _messageController,
                     decoration: InputDecoration(
-                      hintText: 'Nhập câu hỏi của bạn...',
+                      hintText: 'Hỏi Hachi về nông nghiệp...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide(
@@ -231,71 +233,96 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppInsets.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.paleGreen,
-                shape: BoxShape.circle,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Padding(
+              padding: const EdgeInsets.all(AppInsets.xl),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'lib/img/41409_250478.webp',
+                        width: 64,
+                        height: 64,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Chào bạn! 👋',
+                    style: AppTextStyles.headingMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tôi là trợ lý AI của Hachi.\nChuyên gia về Thủy canh & Nông nghiệp 4.0',
+                    style: AppTextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _SuggestionChip(
+                        text: 'Hachi là ai?',
+                        onTap: () {
+                          _messageController.text =
+                              'Giới thiệu về Hachi và các dịch vụ chính?';
+                          _sendMessage();
+                        },
+                      ),
+                      _SuggestionChip(
+                        text: 'Giải pháp thủy canh',
+                        onTap: () {
+                          _messageController.text =
+                              'Hachi có những giải pháp thủy canh nào cho nhà phố?';
+                          _sendMessage();
+                        },
+                      ),
+                      _SuggestionChip(
+                        text: 'Tư vấn nông nghiệp',
+                        onTap: () {
+                          _messageController.text =
+                              'Tôi muốn được tư vấn về mô hình trang trại công nghệ cao.';
+                          _sendMessage();
+                        },
+                      ),
+                      _SuggestionChip(
+                        text: 'Công nghệ IoT',
+                        onTap: () {
+                          _messageController.text =
+                              'Hệ thống IoT của Hachi giúp gì cho việc trồng rau?';
+                          _sendMessage();
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              child: Icon(
-                Icons.chat_outlined,
-                size: 64,
-                color: AppColors.primaryGreen,
-              ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Chào bạn! 👋',
-              style: AppTextStyles.headingMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tôi là trợ lý AI chuyên về nông nghiệp.\nHãy hỏi tôi bất cứ điều gì!',
-              style: AppTextStyles.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                _SuggestionChip(
-                  text: 'Trồng rau gì mùa này?',
-                  onTap: () {
-                    _messageController.text =
-                        'Tôi nên trồng rau gì trong tháng này?';
-                    _sendMessage();
-                  },
-                ),
-                _SuggestionChip(
-                  text: 'Thủy canh là gì?',
-                  onTap: () {
-                    _messageController.text =
-                        'Thủy canh là gì và có lợi ích gì?';
-                    _sendMessage();
-                  },
-                ),
-                _SuggestionChip(
-                  text: 'Cách chăm sóc rau',
-                  onTap: () {
-                    _messageController.text =
-                        'Làm sao để chăm sóc rau hiệu quả?';
-                    _sendMessage();
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -348,12 +375,35 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Text(
-                message.content,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: isUser ? Colors.white : AppColors.darkText,
-                ),
-              ),
+              child: isUser
+                  ? Text(
+                      message.content,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white,
+                      ),
+                    )
+                  : MarkdownBody(
+                      data: message.content,
+                      // Use a custom extension set that excludes TableSyntax
+                      extensionSet: md.ExtensionSet(
+                        md.ExtensionSet.gitHubFlavored.blockSyntaxes
+                            .where((s) => s is! md.TableSyntax)
+                            .toList(),
+                        md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
+                      ),
+                      styleSheet: MarkdownStyleSheet(
+                        p: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.darkText,
+                        ),
+                        strong: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.darkText,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        listBullet: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.darkText,
+                        ),
+                      ),
+                    ),
             ),
           ),
           if (isUser) ...[
