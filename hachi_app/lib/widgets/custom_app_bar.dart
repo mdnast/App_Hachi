@@ -11,6 +11,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.weatherDescription,
     required this.onSearchTap,
     required this.onNotificationTap,
+    this.showBackArrow = false,
   });
 
   final String title;
@@ -19,6 +20,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String weatherDescription;
   final VoidCallback onSearchTap;
   final VoidCallback onNotificationTap;
+  final bool showBackArrow;
 
   @override
   Size get preferredSize => const Size.fromHeight(80);
@@ -58,6 +60,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           children: [
             Row(
               children: [
+                if (showBackArrow)
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                if (showBackArrow) const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,13 +78,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.white70,
+                      if (subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white70,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

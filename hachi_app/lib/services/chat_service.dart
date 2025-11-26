@@ -15,7 +15,7 @@ class ChatService {
   // Danh sách models để thử - nếu model này lỗi thì tự động chuyển sang model tiếp theo
   static const List<String> _models = [
     'deepseek-ai/deepseek-v3.1'
-        'deepseek-r1-distill-llama-70b',
+    'deepseek-r1-distill-llama-70b',
     'openai-gpt-oss-20b',
     'llama3.3-70b-instruct',
     'openai-gpt-oss-120b',

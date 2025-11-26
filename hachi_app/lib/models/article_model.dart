@@ -27,6 +27,7 @@ class PlantArticle {
     required this.url,
     required this.publishedAt,
     this.image,
+    this.content,
   });
 
   final String id;
@@ -37,4 +38,12 @@ class PlantArticle {
   final String url;
   final DateTime publishedAt;
   final String? image;
+  final String? content;
+}
+
+class PaginatedArticles {
+  final List<PlantArticle> articles;
+  final int totalPages;
+
+  PaginatedArticles({required this.articles, required this.totalPages});
 }

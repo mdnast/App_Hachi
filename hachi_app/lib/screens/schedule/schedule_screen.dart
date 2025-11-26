@@ -551,6 +551,90 @@ class _ScheduleCard extends StatelessWidget {
                           ),
                         ],
                       ),
+
+                      // --- VietGAP Details Section ---
+                      if (activity.lotId != null ||
+                          activity.inputDetails != null ||
+                          activity.harvestDetails != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (activity.lotId != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.qr_code,
+                                        size: 12,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          'Lô: ${activity.lotId}',
+                                          style: AppTextStyles.caption.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primaryGreen,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              if (activity.inputDetails != null) ...[
+                                Text(
+                                  'Vật tư: ${activity.inputDetails!.productName} (${activity.inputDetails!.quantity} ${activity.inputDetails!.unit})',
+                                  style: AppTextStyles.caption,
+                                ),
+                                if (activity.inputDetails!.safetyInterval !=
+                                        null &&
+                                    activity.inputDetails!.safetyInterval! > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.warning_amber_rounded,
+                                          size: 14,
+                                          color: Colors.redAccent,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Cách ly: ${activity.inputDetails!.safetyInterval} ngày',
+                                          style: AppTextStyles.caption.copyWith(
+                                            color: Colors.redAccent,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+
+                              if (activity.harvestDetails != null)
+                                Text(
+                                  'Thu hoạch: ${activity.harvestDetails!.quantity} ${activity.harvestDetails!.unit} (Loại ${activity.harvestDetails!.qualityGrade.name})',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.accentOrange,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      // -------------------------------
                     ],
                   ),
                 ),
@@ -670,9 +754,11 @@ class _ScheduleFormSheet extends StatefulWidget {
 class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _locationController;
+  late final TextEditingController _lotIdController;
   late DateTime _chosenDate;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
+  ActivityType _selectedType = ActivityType.other;
   bool _saving = false;
 
   @override
@@ -681,6 +767,7 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
     final initial = widget.initialActivity;
     _titleController = TextEditingController(text: initial?.title ?? '');
     _locationController = TextEditingController(text: initial?.location ?? '');
+    _lotIdController = TextEditingController(text: initial?.lotId ?? '');
     _chosenDate = initial?.startTime ?? widget.initialDate;
     _startTime = TimeOfDay(
       hour: initial?.startTime.hour ?? 8,
@@ -690,12 +777,16 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
       hour: initial?.endTime.hour ?? 9,
       minute: initial?.endTime.minute ?? 0,
     );
+    if (initial != null) {
+      _selectedType = initial.type;
+    }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _locationController.dispose();
+    _lotIdController.dispose();
     super.dispose();
   }
 
@@ -755,6 +846,8 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
   Future<void> _submit() async {
     final title = _titleController.text.trim();
     final location = _locationController.text.trim();
+    final lotId = _lotIdController.text.trim();
+
     if (title.isEmpty || location.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tiêu đề và địa điểm là bắt buộc.')),
@@ -796,6 +889,15 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
       startTime: startDateTime,
       endTime: endDateTime,
       status: base?.status ?? ActivityStatus.incomplete,
+      type: _selectedType,
+      lotId: lotId.isNotEmpty ? lotId : null,
+      // Preserve existing details if editing
+      sowingDetails: base?.sowingDetails,
+      inputDetails: base?.inputDetails,
+      pestDiseaseDetails: base?.pestDiseaseDetails,
+      growthDetails: base?.growthDetails,
+      harvestDetails: base?.harvestDetails,
+      postHarvestDetails: base?.postHarvestDetails,
     );
 
     if (!mounted) return;
@@ -832,10 +934,76 @@ class _ScheduleFormSheetState extends State<_ScheduleFormSheet> {
             ),
             const SizedBox(height: AppInsets.lg),
 
+            // Activity Type Dropdown
+            DropdownButtonFormField<ActivityType>(
+              value: _selectedType,
+              decoration: InputDecoration(
+                labelText: 'Loại hoạt động (VietGAP)',
+                filled: true,
+                fillColor: AppColors.lightBackground,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+              ),
+              items: ActivityType.values.map((type) {
+                String label = 'Khác';
+                switch (type) {
+                  case ActivityType.landPreparation:
+                    label = 'Làm đất';
+                    break;
+                  case ActivityType.sowing:
+                    label = 'Gieo trồng';
+                    break;
+                  case ActivityType.fertilizing:
+                    label = 'Bón phân';
+                    break;
+                  case ActivityType.spraying:
+                    label = 'Phun thuốc (BVTV)';
+                    break;
+                  case ActivityType.irrigation:
+                    label = 'Tưới tiêu';
+                    break;
+                  case ActivityType.care:
+                    label = 'Chăm sóc';
+                    break;
+                  case ActivityType.growthObservation:
+                    label = 'Theo dõi sinh trưởng';
+                    break;
+                  case ActivityType.harvest:
+                    label = 'Thu hoạch';
+                    break;
+                  case ActivityType.postHarvest:
+                    label = 'Sau thu hoạch';
+                    break;
+                  case ActivityType.other:
+                    label = 'Khác';
+                    break;
+                }
+                return DropdownMenuItem(value: type, child: Text(label));
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => _selectedType = value);
+              },
+            ),
+            const SizedBox(height: AppInsets.md),
+
             _buildTextField(
               controller: _titleController,
               label: 'Tiêu đề công việc',
               icon: Icons.task_alt,
+            ),
+            const SizedBox(height: AppInsets.md),
+
+            // Lot ID Field
+            _buildTextField(
+              controller: _lotIdController,
+              label: 'Mã Lô (Lot ID)',
+              icon: Icons.qr_code,
             ),
             const SizedBox(height: AppInsets.md),
 
