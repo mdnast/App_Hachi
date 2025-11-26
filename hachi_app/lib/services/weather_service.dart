@@ -127,6 +127,7 @@ class WeatherService {
       precipitation: precipitation,
       sunrise: sunrise,
       sunset: sunset,
+      weatherCode: currentCode,
     );
 
     // Build daily forecast list (up to `days`).

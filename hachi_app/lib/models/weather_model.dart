@@ -10,6 +10,7 @@ class WeatherInfo {
     required this.precipitation,
     required this.sunrise,
     required this.sunset,
+    required this.weatherCode,
   });
 
   final double temperature;
@@ -22,6 +23,7 @@ class WeatherInfo {
   final double precipitation;
   final String sunrise;
   final String sunset;
+  final int weatherCode;
 
   WeatherInfo copyWith({
     double? temperature,
@@ -34,6 +36,7 @@ class WeatherInfo {
     double? precipitation,
     String? sunrise,
     String? sunset,
+    int? weatherCode,
   }) {
     return WeatherInfo(
       temperature: temperature ?? this.temperature,
@@ -46,6 +49,7 @@ class WeatherInfo {
       precipitation: precipitation ?? this.precipitation,
       sunrise: sunrise ?? this.sunrise,
       sunset: sunset ?? this.sunset,
+      weatherCode: weatherCode ?? this.weatherCode,
     );
   }
 
@@ -62,6 +66,7 @@ class WeatherInfo {
       precipitation: 0,
       sunrise: '--:--',
       sunset: '--:--',
+      weatherCode: 1000,
     );
   }
 }

@@ -148,13 +148,16 @@ class _WeatherScreenState extends State<WeatherScreen> {
               ),
 
               const SizedBox(height: AppInsets.lg),
+              _WeatherDetailsGrid(weather: widget.weather),
+
+              const SizedBox(height: AppInsets.lg),
               const Text(
                 'Dự báo theo giờ hôm nay',
                 style: AppTextStyles.headingMedium,
               ),
               const SizedBox(height: AppInsets.md),
               SizedBox(
-                height: 110,
+                height: 140,
                 child: _hourlyToday.isEmpty
                     ? Center(
                         child: Text(
@@ -169,10 +172,15 @@ class _WeatherScreenState extends State<WeatherScreen> {
                             const SizedBox(width: AppInsets.sm),
                         itemBuilder: (_, index) {
                           final hour = _hourlyToday[index];
+                          final hourOfDay = hour.time.hour;
+                          final isDay = hourOfDay >= 6 && hourOfDay < 18;
                           return _HourlyForecastChip(
                             time: formatTime(hour.time),
                             temperature: '${hour.temperature.round()}°',
-                            icon: _iconForCode(hour.weatherCode),
+                            icon: _iconForWeatherApiCode(
+                              hour.weatherCode,
+                              isDay: isDay,
+                            ),
                           );
                         },
                       ),
@@ -190,7 +198,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                       description: formatFullDate(_daily[i].date),
                       temperature:
                           '${_daily[i].high.round()}° / ${_daily[i].low.round()}°',
-                      icon: _iconForCode(_daily[i].weatherCode),
+                      icon: _iconForWeatherApiCode(_daily[i].weatherCode),
                       isToday: i == 0,
                     ),
                     if (i < _daily.length - 1 && i < 4)
@@ -223,20 +231,26 @@ class _ForecastHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hourOfDay = now.hour;
+    final isDay = hourOfDay >= 6 && hourOfDay < 18;
+
     return Container(
-      padding: const EdgeInsets.all(AppInsets.lg),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primaryGreen,
+            AppColors.primaryGreen.withOpacity(0.8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(AppCorners.lg),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(20),
+            color: AppColors.primaryGreen.withOpacity(0.3),
             blurRadius: 20,
-            offset: const Offset(0, 12),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -244,61 +258,202 @@ class _ForecastHeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    locationLabel,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: Colors.white70,
-                    ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        locationLabel,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
-                    '${formatFullDate(now)}\n${formatTime(now)}',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white,
-                    ),
+                    formatFullDate(now),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ],
               ),
-              const Spacer(),
               IconButton(
                 onPressed: isLoading ? null : onRefresh,
                 icon: const Icon(Icons.refresh, color: Colors.white),
               ),
             ],
           ),
-          const SizedBox(height: AppInsets.lg),
-          SizedBox(
-            height: 160,
-            child: Stack(
-              alignment: Alignment.center,
-              children: const [
-                Positioned.fill(child: _ArcPainterWidget()),
-                Positioned(
-                  top: 50, // Moved down from 32
-                  child: Icon(
-                    Icons.wb_sunny,
-                    color: Colors.yellowAccent,
-                    size: 48,
+          const SizedBox(height: 32),
+          Center(
+            child: Column(
+              children: [
+                Icon(
+                  _iconForWeatherApiCode(weather.weatherCode, isDay: isDay),
+                  color: Colors.yellowAccent,
+                  size: 80,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  weather.temperature == 0
+                      ? '--°'
+                      : '${weather.temperature.round()}°',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 72,
+                    fontWeight: FontWeight.bold,
+                    height: 1,
                   ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  weather.condition,
+                  style: const TextStyle(color: Colors.white70, fontSize: 18),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'H: ${weather.high.round()}°',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      'L: ${weather.low.round()}°',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppInsets.md),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeatherDetailsGrid extends StatelessWidget {
+  const _WeatherDetailsGrid({required this.weather});
+
+  final WeatherInfo weather;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.1,
+      children: [
+        _WeatherMetricCard(
+          icon: Icons.water_drop_outlined,
+          label: 'Độ ẩm',
+          value: '${weather.humidity}%',
+          color: Colors.blue,
+        ),
+        _WeatherMetricCard(
+          icon: Icons.air,
+          label: 'Tốc độ gió',
+          value: '${weather.windSpeed.round()} km/h',
+          color: Colors.teal,
+        ),
+        _WeatherMetricCard(
+          icon: Icons.grain,
+          label: 'Lượng mưa',
+          value: '${weather.precipitation.toStringAsFixed(1)} mm',
+          color: Colors.indigo,
+        ),
+        _WeatherMetricCard(
+          icon: Icons.wb_twilight,
+          label: 'Bình minh',
+          value: weather.sunrise,
+          color: Colors.orange,
+        ),
+      ],
+    );
+  }
+}
+
+class _WeatherMetricCard extends StatelessWidget {
+  const _WeatherMetricCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _WeatherInfo(label: 'Bình minh', value: weather.sunrise),
-              _WeatherInfo(label: 'Hoàng hôn', value: weather.sunset),
-              _WeatherInfo(
-                label: 'Nhiệt độ',
-                value: weather.temperature == 0
-                    ? '--°C'
-                    : '${weather.temperature.round()}°C',
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.darkText,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -491,6 +646,42 @@ class _HourlyForecastChip extends StatelessWidget {
       ),
     );
   }
+}
+
+IconData _iconForWeatherApiCode(int code, {bool isDay = true}) {
+  // WeatherAPI.com condition codes
+  // https://www.weatherapi.com/docs/weather_conditions.json
+
+  // Clear/Sunny - different for day/night
+  if (code == 1000) {
+    return isDay ? Icons.wb_sunny : Icons.nightlight_round;
+  }
+
+  // Partly cloudy - different for day/night
+  if (code == 1003) {
+    return isDay ? Icons.wb_cloudy : Icons.cloud_outlined;
+  }
+
+  // Cloudy/Overcast
+  if (code == 1006 || code == 1009) return Icons.cloud;
+
+  // Rain/Drizzle
+  if (code >= 1063 && code <= 1072) return Icons.grain;
+  if (code >= 1150 && code <= 1201) return Icons.grain;
+  if (code >= 1240 && code <= 1246) return Icons.grain;
+
+  // Thunderstorm
+  if (code >= 1273 && code <= 1282) return Icons.thunderstorm;
+
+  // Snow
+  if (code >= 1210 && code <= 1237) return Icons.ac_unit;
+  if (code >= 1249 && code <= 1264) return Icons.ac_unit;
+  if (code >= 1114 && code <= 1117) return Icons.ac_unit;
+
+  // Fog/Mist
+  if (code >= 1135 && code <= 1147) return Icons.cloud;
+
+  return Icons.wb_cloudy; // Default
 }
 
 IconData _iconForCode(int code) {
