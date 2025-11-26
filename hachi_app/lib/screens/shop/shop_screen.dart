@@ -137,19 +137,16 @@ class _ShopScreenState extends State<ShopScreen> {
       ),
       body: Column(
         children: [
-          // Header Row (Title + Contact Buttons)
+          // Header Row (Logo + Contact Buttons)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             color: Colors.white,
             child: Row(
               children: [
-                const Text(
-                  'Giỏ Hàng',
-                  style: TextStyle(
-                    color: AppColors.primaryGreen,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
+                Image.asset(
+                  'lib/img/logo Hachi 2025 Color.png',
+                  height: 40,
+                  fit: BoxFit.contain,
                 ),
                 const Spacer(),
                 _buildContactRow(),
@@ -165,7 +162,7 @@ class _ShopScreenState extends State<ShopScreen> {
             )
           else
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: _buildCategoryDropdown(),
@@ -230,11 +227,13 @@ class _ShopScreenState extends State<ShopScreen> {
               .name;
 
     return PopupMenuButton<int?>(
+      key: ValueKey(_selectedCategoryId),
       onSelected: (int? value) {
         _onCategorySelected(value);
       },
-      offset: const Offset(0, 45),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      offset: const Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 8,
       itemBuilder: (BuildContext context) {
         final List<PopupMenuEntry<int?>> items = [];
 
@@ -242,33 +241,52 @@ class _ShopScreenState extends State<ShopScreen> {
         items.add(
           PopupMenuItem<int?>(
             value: null,
-            child: Row(
-              children: [
-                if (_selectedCategoryId == null)
-                  const Icon(
-                    Icons.check,
-                    color: AppColors.primaryGreen,
-                    size: 18,
-                  ),
-                if (_selectedCategoryId == null) const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Tất cả',
-                    style: TextStyle(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
                       color: _selectedCategoryId == null
                           ? AppColors.primaryGreen
-                          : AppColors.darkText,
-                      fontWeight: _selectedCategoryId == null
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                      fontSize: 14,
+                          : Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _selectedCategoryId == null
+                            ? AppColors.primaryGreen
+                            : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                    ),
+                    child: _selectedCategoryId == null
+                        ? const Icon(Icons.check, color: Colors.white, size: 14)
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Tất cả sản phẩm',
+                      style: TextStyle(
+                        color: _selectedCategoryId == null
+                            ? AppColors.primaryGreen
+                            : AppColors.darkText,
+                        fontWeight: _selectedCategoryId == null
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
+
+        // Divider
+        items.add(const PopupMenuDivider(height: 1));
 
         // Categories
         for (final category in _categories) {
@@ -276,30 +294,73 @@ class _ShopScreenState extends State<ShopScreen> {
           items.add(
             PopupMenuItem<int?>(
               value: category.id,
-              child: Row(
-                children: [
-                  if (isSelected)
-                    const Icon(
-                      Icons.check,
-                      color: AppColors.primaryGreen,
-                      size: 18,
-                    ),
-                  if (isSelected) const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      category.name,
-                      style: TextStyle(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.primaryGreen
-                            : AppColors.darkText,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                        fontSize: 14,
+                            : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryGreen
+                              : Colors.grey.shade300,
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 14,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        category.name,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.primaryGreen
+                              : AppColors.darkText,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    if (category.count > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primaryGreen.withOpacity(0.1)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${category.count}',
+                          style: TextStyle(
+                            color: isSelected
+                                ? AppColors.primaryGreen
+                                : Colors.grey.shade600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           );
@@ -307,35 +368,65 @@ class _ShopScreenState extends State<ShopScreen> {
         return items;
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1.5),
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.grey.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color: AppColors.primaryGreen.withOpacity(0.3),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: AppColors.primaryGreen.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+              spreadRadius: 0,
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 5,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              selectedCategoryName,
-              style: const TextStyle(
-                color: AppColors.darkText,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.category_rounded,
+                color: AppColors.primaryGreen,
+                size: 16,
               ),
             ),
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.arrow_drop_down,
-              color: AppColors.darkText,
-              size: 24,
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                selectedCategoryName,
+                style: const TextStyle(
+                  color: AppColors.darkText,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  letterSpacing: 0.2,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.primaryGreen,
+              size: 20,
             ),
           ],
         ),

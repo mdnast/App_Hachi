@@ -100,6 +100,7 @@ class WordPressService {
       }
 
       final url = Uri.parse(urlString);
+      print('🔍 Fetching products: $urlString'); // Debug log
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -109,12 +110,16 @@ class WordPressService {
         final int totalPosts =
             int.tryParse(response.headers['x-wp-total'] ?? '0') ?? 0;
 
+        print(
+          '✅ Loaded ${data.length} products (Total: $totalPosts)',
+        ); // Debug log
         return WordPressResponse<Product>(
           posts: data.map((json) => Product.fromJson(json)).toList(),
           totalPages: totalPages,
           totalPosts: totalPosts,
         );
       } else {
+        print('❌ Failed to load products: ${response.statusCode}'); // Debug log
         throw Exception('Failed to load products');
       }
     } catch (e) {
