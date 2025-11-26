@@ -4,6 +4,7 @@ import '../models/article_model.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
 import '../widgets/custom_app_bar.dart';
+import '../widgets/youtube_embed.dart';
 
 class ArticleDetailScreen extends StatelessWidget {
   const ArticleDetailScreen({super.key, required this.article});
@@ -36,7 +37,7 @@ class ArticleDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                article.category.label,
+                article.customCategoryLabel ?? article.category.label,
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.primaryGreen,
                   fontWeight: FontWeight.bold,
@@ -80,8 +81,6 @@ class ArticleDetailScreen extends StatelessWidget {
             const SizedBox(height: AppInsets.lg),
 
             // Featured Image (if available and not already in content)
-            // Note: WordPress content often includes the featured image, so we might skip it here
-            // or show it if we want a consistent header.
             if (article.image != null) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppCorners.md),
@@ -160,6 +159,17 @@ class ArticleDetailScreen extends StatelessWidget {
                 child: const Icon(Icons.broken_image, color: Colors.grey),
               ),
               renderMode: RenderMode.column,
+              customWidgetBuilder: (element) {
+                if (element.localName == 'iframe') {
+                  final src = element.attributes['src'];
+                  if (src != null &&
+                      (src.contains('youtube.com') ||
+                          src.contains('youtu.be'))) {
+                    return YouTubeEmbed(url: src);
+                  }
+                }
+                return null;
+              },
             ),
 
             const SizedBox(height: AppInsets.xl),

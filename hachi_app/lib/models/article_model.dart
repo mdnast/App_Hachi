@@ -28,6 +28,7 @@ class PlantArticle {
     required this.publishedAt,
     this.image,
     this.content,
+    this.customCategoryLabel,
   });
 
   final String id;
@@ -39,6 +40,7 @@ class PlantArticle {
   final DateTime publishedAt;
   final String? image;
   final String? content;
+  final String? customCategoryLabel;
 }
 
 class PaginatedArticles {

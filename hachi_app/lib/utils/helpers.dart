@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:html/parser.dart';
 
 String formatMonthDay(DateTime date) => DateFormat('d MMMM', 'vi').format(date);
 
@@ -17,3 +18,8 @@ String formatTimeRange(DateTime start, DateTime end) {
 }
 
 String formatTime(DateTime time) => DateFormat('HH:mm', 'vi').format(time);
+
+String unescapeHtml(String htmlString) {
+  final document = parse(htmlString);
+  return document.body?.text ?? htmlString;
+}

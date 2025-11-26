@@ -8,7 +8,7 @@ import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/plant_detail/plant_detail_screen.dart';
 import 'screens/schedule/schedule_screen.dart';
 import 'screens/weather_forecast/weather_screen.dart';
-import 'screens/market/market_screen.dart';
+import 'screens/shop/shop_screen.dart';
 import 'utils/constants.dart';
 import 'widgets/bottom_nav_bar.dart';
 
@@ -132,7 +132,7 @@ class _HomeShellState extends State<_HomeShell> {
         isLoading: _isLoadingWeather,
         onRefresh: _loadWeather,
       ),
-      const MarketScreen(),
+      const ShopScreen(),
     ];
 
     return Scaffold(

@@ -81,9 +81,13 @@ class ArticleService {
         categoryId: categoryId,
       );
 
+      // Fetch categories if we haven't already (or if we only fetched for ID lookup)
+      // We need them for mapping names.
+      final allCategories = await _wordPressService.fetchCategories();
+
       // 3. Map to PlantArticle
       final articles = response.posts
-          .map(_mapWordPressPostToPlantArticle)
+          .map((post) => _mapWordPressPostToPlantArticle(post, allCategories))
           .toList();
 
       return PaginatedArticles(
@@ -96,11 +100,45 @@ class ArticleService {
     }
   }
 
-  PlantArticle _mapWordPressPostToPlantArticle(WordPressPost post) {
+  PlantArticle _mapWordPressPostToPlantArticle(
+    WordPressPost post,
+    List<WordPressCategory> allCategories,
+  ) {
     // Map WordPress category to ArticleCategory
-    // This is tricky because a post can have multiple categories (IDs).
-    // We'll just pick the first one or default to 'kinhNghiem'
-    ArticleCategory category = ArticleCategory.kinhNghiem;
+    ArticleCategory category = ArticleCategory.kinhNghiem; // Default
+
+    if (post.categories.isNotEmpty) {
+      // Find the first category that matches one of our app categories
+      for (final catId in post.categories) {
+        final wpCategory = allCategories.firstWhere(
+          (c) => c.id == catId,
+          orElse: () => WordPressCategory(id: -1, name: '', slug: ''),
+        );
+
+        if (wpCategory.id != -1) {
+          // Try to match by name
+          try {
+            // Handle special cases or exact matches
+            String nameToCheck = wpCategory.name;
+            if (nameToCheck.toLowerCase() == 'truyền thông nói về hachi') {
+              category = ArticleCategory.baoChiNoiVeHachi;
+              break;
+            } else if (nameToCheck.toLowerCase() == 'dinh dưỡng thuỷ canh') {
+              category = ArticleCategory.dinhDuong;
+              break;
+            }
+
+            category = ArticleCategory.values.firstWhere(
+              (c) => c.label.toLowerCase() == nameToCheck.toLowerCase(),
+            );
+            break; // Found a match
+          } catch (e) {
+            // No match found for this category, try the next one
+            continue;
+          }
+        }
+      }
+    }
 
     // Parse HTML title and excerpt
     String summary = _parseHtmlString(post.excerpt.rendered);

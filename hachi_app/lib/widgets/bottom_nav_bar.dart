@@ -20,7 +20,7 @@ class BottomNavBar extends StatelessWidget {
       _BottomNavItem(Icons.eco_rounded, 'Cây trồng'),
       _BottomNavItem(Icons.calendar_today_rounded, 'Lịch trình'),
       _BottomNavItem(Icons.cloud_outlined, 'Thời tiết'),
-      _BottomNavItem(Icons.shopping_bag_outlined, 'Chợ'),
+      _BottomNavItem(Icons.shopping_bag_outlined, 'Giỏ Hàng'),
     ];
 
     return SafeArea(

@@ -1,3 +1,5 @@
+import '../utils/helpers.dart';
+
 class WordPressPost {
   final int id;
   final String date;
@@ -51,7 +53,7 @@ class RenderedTitle {
   RenderedTitle({required this.rendered});
 
   factory RenderedTitle.fromJson(Map<String, dynamic> json) {
-    return RenderedTitle(rendered: json['rendered']);
+    return RenderedTitle(rendered: unescapeHtml(json['rendered']));
   }
 }
 
@@ -61,6 +63,11 @@ class RenderedContent {
   RenderedContent({required this.rendered});
 
   factory RenderedContent.fromJson(Map<String, dynamic> json) {
+    // Content usually needs to keep HTML tags for WebView/HtmlWidget
+    // But excerpt is often used as summary text, so maybe unescape excerpt?
+    // Let's keep content as is, but unescape excerpt if it's used as plain text.
+    // However, RenderedContent is used for both.
+    // Let's ONLY unescape Title for now as that's the reported issue.
     return RenderedContent(rendered: json['rendered']);
   }
 }
@@ -81,8 +88,8 @@ class WordPressCategory {
   }
 }
 
-class WordPressResponse {
-  final List<WordPressPost> posts;
+class WordPressResponse<T> {
+  final List<T> posts;
   final int totalPages;
   final int totalPosts;
 

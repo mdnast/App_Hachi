@@ -86,4 +86,15 @@ class AppConstants {
 
   static const Duration cacheExpiration = Duration(minutes: 30);
   static const Duration requestTimeout = Duration(seconds: 10);
+
+  // Contact Info
+  static const String contactHotline1 = '0901236086';
+  static const String contactHotline2 = '0337776086';
+  static const String contactZalo = '446586338438529971';
+  static const String contactMessenger = '247815478889643';
+  static const String contactEmail = 'info@hachi.com.vn';
+
+  // Deprecated/Aliases
+  static const String contactPhone =
+      contactHotline2; // Default to hotline 2 if generic
 }
