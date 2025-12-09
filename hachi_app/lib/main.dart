@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'models/plant_model.dart';
 import 'models/weather_model.dart';
 import 'services/location_service.dart';
 import 'services/weather_service.dart';
+import 'services/supabase_service.dart';
+import 'providers/auth_provider.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/plant_detail/plant_detail_screen.dart';
 import 'screens/schedule/schedule_screen.dart';
@@ -11,13 +14,23 @@ import 'screens/weather_forecast/weather_screen.dart';
 import 'screens/shop/shop_screen.dart';
 import 'utils/constants.dart';
 import 'widgets/bottom_nav_bar.dart';
+import 'widgets/auth_wrapper.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
-  initializeDateFormatting('vi', null).then((_) {
-    runApp(const HachiApp());
-  });
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase
+  await SupabaseService.initialize(
+    url: 'https://iiifvzvonveewnbtnqkr.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpaWZ2enZvbnZlZXduYnRucWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMzk3NzgsImV4cCI6MjA3OTcxNTc3OH0.ekv8EcHKD4G0xzPndOdNABb4bfPwqOTUzJRYsTuN_vQ',
+  );
+
+  await initializeDateFormatting('vi', null);
+
+  runApp(const HachiApp());
 }
 
 class HachiApp extends StatelessWidget {
@@ -25,35 +38,38 @@ class HachiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Hachi Plantation',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.lightBackground,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryGreen,
-          primary: AppColors.primaryGreen,
-          secondary: AppColors.secondaryGreen,
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      child: MaterialApp(
+        title: 'Hachi Plantation',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          scaffoldBackgroundColor: AppColors.lightBackground,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppColors.primaryGreen,
+            primary: AppColors.primaryGreen,
+            secondary: AppColors.secondaryGreen,
+          ),
+          textTheme: ThemeData.light().textTheme.apply(
+            bodyColor: AppColors.darkText,
+            displayColor: AppColors.darkText,
+          ),
         ),
-        textTheme: ThemeData.light().textTheme.apply(
-          bodyColor: AppColors.darkText,
-          displayColor: AppColors.darkText,
-        ),
+        home: const AuthWrapper(),
       ),
-      home: const _HomeShell(),
     );
   }
 }
 
-class _HomeShell extends StatefulWidget {
-  const _HomeShell();
+class HomeShell extends StatefulWidget {
+  const HomeShell({super.key});
 
   @override
-  State<_HomeShell> createState() => _HomeShellState();
+  State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<_HomeShell> {
+class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
   final WeatherService _weatherService = WeatherService();
   final LocationService _locationService = const LocationService();

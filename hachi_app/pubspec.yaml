@@ -45,6 +45,11 @@ dependencies:
   flutter_widget_from_html: ^0.15.3
   fwfh_webview: ^0.15.6
   font_awesome_flutter: ^10.12.0
+  
+  # Authentication & State Management
+  supabase_flutter: ^2.5.0
+  provider: ^6.1.0
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
   flutter_test:
