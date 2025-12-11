@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/chat_message.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ChatService {
   // Singleton pattern - đảm bảo chỉ có 1 instance duy nhất
@@ -9,13 +10,12 @@ class ChatService {
   ChatService._internal();
 
   static const String _apiUrl = 'https://ai.megallm.io/v1/chat/completions';
-  static const String _apiKey =
-      'sk-mega-73a240a8b20f917a2859d342687bd7cdd8f691621b36ff034929e66af5ebaef6';
+  static String get _apiKey => dotenv.env['MEGA_AI_API_KEY'] ?? '';
 
   // Danh sách models để thử - nếu model này lỗi thì tự động chuyển sang model tiếp theo
   static const List<String> _models = [
     'deepseek-ai/deepseek-v3.1'
-    'deepseek-r1-distill-llama-70b',
+        'deepseek-r1-distill-llama-70b',
     'openai-gpt-oss-20b',
     'llama3.3-70b-instruct',
     'openai-gpt-oss-120b',
