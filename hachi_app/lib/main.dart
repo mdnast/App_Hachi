@@ -25,9 +25,8 @@ void main() async {
 
   // Initialize Supabase
   await SupabaseService.initialize(
-    url: 'https://iiifvzvonveewnbtnqkr.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpaWZ2enZvbnZlZXduYnRucWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMzk3NzgsImV4cCI6MjA3OTcxNTc3OH0.ekv8EcHKD4G0xzPndOdNABb4bfPwqOTUzJRYsTuN_vQ',
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
   await initializeDateFormatting('vi', null);
